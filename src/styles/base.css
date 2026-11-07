@@ -159,16 +159,23 @@ button { font: inherit; color: inherit; }
   color: var(--c-tally);
 }
 
-/* Dev-only worst-case toggle (break-ui). Injected only by the dev server. */
+/* Dev-only worst-case toggle (break-ui). Injected only by the dev server.
+   Plain chrome, not part of the design under test: system font, grey track. */
 .devtoggle {
   position: fixed;
-  left: 8px; bottom: 8px;
+  left: 50%;
+  bottom: calc(8px + var(--safe-b));
+  transform: translateX(-50%);
   z-index: 200;
-  display: flex; gap: 8px; align-items: center;
-  padding: 6px 8px;
-  background: var(--c-gate);
-  border: 1px solid var(--c-line);
-  font: 500 11px/1 var(--f-mono);
-  text-transform: uppercase;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
+  max-width: calc(100vw - 16px);
+  padding: 3px;
+  border-radius: 999px;
+  background: #3a3a3a;
+  font: 500 12px/1 system-ui, sans-serif;
 }
-.devtoggle select { font: inherit; font-size: 16px; }
+.devtoggle a { padding: 6px 10px; border-radius: 999px; color: #ddd; text-decoration: none; }
+.devtoggle a[aria-current] { background: #fff; color: #111; }

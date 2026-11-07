@@ -70,13 +70,14 @@
   .sheet { grid-template-columns: repeat(8, minmax(0, 1fr)); row-gap: 56px; }
   .sheet__item:nth-child(odd) { grid-column: 1 / span 4; }
   .sheet__item:nth-child(even) { grid-column: 5 / span 4; margin-top: clamp(40px, 8vw, 120px); }
-  .sheet[data-count='1'] .sheet__item { grid-column: 2 / span 6; margin-top: 0; }
+  /* A lone frame hangs from the left edge, never centred. */
+  .sheet[data-count='1'] .sheet__item { grid-column: 1 / span 6; margin-top: 0; }
 }
 @media (min-width: 1024px) {
   .sheet { grid-template-columns: repeat(12, minmax(0, 1fr)); row-gap: 72px; }
   .sheet__item:nth-child(odd) { grid-column: 1 / span 6; }
   .sheet__item:nth-child(even) { grid-column: 7 / span 6; }
-  .sheet[data-count='1'] .sheet__item { grid-column: 3 / span 8; }
+  .sheet[data-count='1'] .sheet__item { grid-column: 1 / span 8; }
 }
 
 .frame { display: grid; gap: 8px; min-width: 0; }
@@ -113,6 +114,8 @@
 
 .sheet--empty {
   display: grid;
+  /* break-ui: the empty slate must not inherit the sheet's 4/8/12-column grid. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   padding: 32px 0;
   border-top: 1px solid var(--c-line);

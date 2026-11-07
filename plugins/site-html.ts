@@ -53,15 +53,15 @@ export function siteHtml(): Plugin {
           .replace('<!--@status-->', renderStatus('', ' data-status'))
           .replace('<!--@status:settle-->', renderStatus('status--settle', ' aria-hidden="true" data-status-settle'));
 
-        // Dev-only worst-case toggle (break-ui). Never present in a production build.
+        // Dev-only worst-case toggle (break-ui): a segmented control, bottom-centre,
+        // swapping the fixture at the data boundary via ?fixture=. Never in a build.
         if (serve) {
-          const opts = ['', ...Object.keys(fixtures)]
-            .map((k) => `<option value="${k}"${k === fixtureName ? ' selected' : ''}>${k || 'Real data'}</option>`)
-            .join('');
-          out = out.replace(
-            '</body>',
-            `<label class="devtoggle">Demo data / Worst case <select onchange="const u=new URL(location.href);this.value?u.searchParams.set('fixture',this.value):u.searchParams.delete('fixture');location.href=u">${opts}</select></label>\n</body>`,
-          );
+          const seg = (key: string, label: string) => {
+            const href = key ? `?fixture=${key}` : '?';
+            return `<a href="${href}"${key === fixtureName ? ' aria-current="true"' : ''}>${label}</a>`;
+          };
+          const segs = [seg('', 'Demo data'), seg('long', 'Worst case'), ...Object.keys(fixtures).filter((k) => k !== 'long').map((k) => seg(k, k[0].toUpperCase() + k.slice(1)))].join('');
+          out = out.replace('</body>', `<nav class="devtoggle" aria-label="Demo data / Worst case (dev only)">${segs}</nav>\n</body>`);
         }
         return out;
       },

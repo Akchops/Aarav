@@ -5,14 +5,21 @@
  */
 import { projects, type Project } from './projects';
 
+// Plausible worst case, not nonsense: a long real-world-shaped project name with an
+// unbreakable compound word, and a summary at the length a client brief often has.
 const long: Project[] = [
   {
     ...projects[0],
-    name: 'Kesselwerkstattgesamtgestaltungsplattform — Internationale Sonderausgabe für sehr lange Projektnamen',
+    name: 'Kesselhaus Werkstattgemeinschaft — Annual Open Studios Programme 2026–2027',
     summary:
-      'An intentionally overlong description used to stress the frame, the slate and the full-frame card: it keeps going past the point where any real summary would stop, to find out what breaks.',
+      'A demo website for a cooperative of independent workshops, with a bilingual events calendar, a members directory and a booking flow for open-studio weekends across three neighbourhoods.',
   },
-  { ...projects[1], name: 'Prayatn', summary: 'A volunteer website for a non-profit.' },
+  {
+    ...projects[1],
+    name: 'Prayatn',
+    summary: 'A volunteer website for a non-profit.',
+    url: 'https://prayatn-volunteer-network-foundation-international.example.org/get-involved/volunteer-opportunities',
+  },
 ];
 
 const nourl: Project[] = projects.map((p) => ({ ...p, url: undefined }));

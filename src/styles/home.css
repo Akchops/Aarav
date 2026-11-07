@@ -207,16 +207,32 @@
 }
 .stage__card .slate { padding: 10px 14px 0; }
 .stage__card-name {
-  padding: 8px 14px 4px;
-  font: 900 clamp(3rem, 12vw, 8rem)/0.86 var(--f-display);
+  /* Bottom spacing is a border, not padding: a clamped box clips at its padding
+     edge, so padding would let the next line show through. */
+  padding: 8px 14px 0;
+  border-bottom: 4px solid var(--c-black);
+  font: 900 clamp(2.5rem, 9vw, 6.5rem)/0.9 var(--f-display);
   font-stretch: 75%;
   letter-spacing: var(--name-track);
   color: var(--c-screen);
   overflow-wrap: anywhere;
+  /* break-ui: a long project name must not climb out of the frame. The card is a
+     decorative echo (aria-hidden); the full name is always in the grid beneath. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
 }
 .stage__card-summary {
-  padding: 4px 14px 12px;
+  padding: 4px 14px 0;
+  border-bottom: 12px solid var(--c-black);
   color: var(--c-screen);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
 }
 /* While the canvas draws the name, the DOM copy stays in the accessibility tree, invisible. */
 /* The develop keyframes fill forwards, which would beat a plain opacity rule, so
