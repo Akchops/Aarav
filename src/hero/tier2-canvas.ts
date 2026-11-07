@@ -9,7 +9,9 @@ import type { Frame, Pose, SceneModel, Vec3 } from './model';
 import type { Assets, Inputs, Tier } from './tier';
 
 const BG = '#0B0B0A';
-const SLICES = 16; // vertical strips per rotated frame: true perspective from affine draws
+// Tier 2 is the CPU path: sources are downscaled once to this width, so each frame
+// never resamples a 2048px texture.
+const SOURCE_W = 1024;
 
 function tinted(src: HTMLCanvasElement, rgb: string): HTMLCanvasElement {
   const c = document.createElement('canvas');
@@ -23,17 +25,14 @@ function tinted(src: HTMLCanvasElement, rgb: string): HTMLCanvasElement {
   return c;
 }
 
-function noise(): HTMLCanvasElement {
+function downscale(src: HTMLCanvasElement): HTMLCanvasElement {
+  if (src.width <= SOURCE_W) return src;
   const c = document.createElement('canvas');
-  c.width = c.height = 128;
+  c.width = SOURCE_W;
+  c.height = Math.round((src.height * SOURCE_W) / src.width);
   const ctx = c.getContext('2d')!;
-  const img = ctx.createImageData(128, 128);
-  for (let i = 0; i < img.data.length; i += 4) {
-    const v = Math.random() * 255;
-    img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
-    img.data[i + 3] = 22;
-  }
-  ctx.putImageData(img, 0, 0);
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(src, 0, 0, c.width, c.height);
   return c;
 }
 
@@ -49,7 +48,7 @@ export function createCanvas2D(): Tier {
   // The name in Silver Screen, plus its three channel records for the lens split
   // (added with 'lighter' on a transparent layer, r + g + b = the ink colour).
   let ink: { full: HTMLCanvasElement; r: HTMLCanvasElement; g: HTMLCanvasElement; b: HTMLCanvasElement } | null = null;
-  let grain: CanvasPattern | null = null;
+  let sources: HTMLCanvasElement[] = [];
 
   const size = () => {
     if (!model) return;
@@ -69,24 +68,47 @@ export function createCanvas2D(): Tier {
     const pt = (lx: number, ly: number) => m.project({ x: p.x + lx * c, y: p.y + ly, z: p.z - lx * s }, cam);
     const corners = [pt(-hw, hh), pt(hw, hh), pt(hw, -hh), pt(-hw, -hh)];
     if (corners.some((q) => q.behind)) return;
+    // Cull: an unlit frame is black on black, and an off-screen one is invisible.
+    if (p.bright < 0.01) return;
+    const { vw: VW, vh: VH } = m.layout;
+    if (corners.every((q) => q.x < 0) || corners.every((q) => q.x > VW) || corners.every((q) => q.y < 0) || corners.every((q) => q.y > VH)) return;
 
     ctx.globalAlpha = p.opacity;
-    if (Math.abs(p.rotY) < 1e-4) {
-      // Facing the camera: a plain rect. This is the pixel-exact landing path.
-      const [tl, , br] = corners;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.drawImage(img, tl.x, tl.y, br.x - tl.x, br.y - tl.y);
+    // Under ~2deg of swing the trapezoid is within a pixel of a rectangle, so the
+    // single-draw path is used (and it is exact at 0, for the landing).
+    if (Math.abs(p.rotY) < 0.035) {
+      const xs = corners.map((q) => q.x), ys = corners.map((q) => q.y);
+      const x0 = Math.min(...xs), y0 = Math.min(...ys);
+      const w = Math.max(...xs) - x0, h = Math.max(...ys) - y0;
+      const { vw, vh } = m.layout;
+      // Sample only the visible part: at full frame the plane overhangs the screen.
+      const cx0 = Math.max(x0, 0), cy0 = Math.max(y0, 0);
+      const cx1 = Math.min(x0 + w, vw), cy1 = Math.min(y0 + h, vh);
+      if (cx1 > cx0 && cy1 > cy0) {
+        const kx = img.width / w, ky = img.height / h;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.drawImage(img, (cx0 - x0) * kx, (cy0 - y0) * ky, (cx1 - cx0) * kx, (cy1 - cy0) * ky, cx0, cy0, cx1 - cx0, cy1 - cy0);
+      }
     } else {
       const W = img.width, H = img.height;
-      for (let j = 0; j < SLICES; j++) {
-        const u0 = j / SLICES, u1 = (j + 1) / SLICES;
+      // Vertical strips: under a Y-rotation each strip's left and right edges stay
+      // vertical, but differ in height. Enough strips keep that difference under
+      // ~2.5px per strip (split top and bottom, so ~1.25px each), which reads as straight.
+      const hL = corners[3].y - corners[0].y, hR = corners[2].y - corners[1].y;
+      const strips = Math.max(4, Math.min(14, Math.ceil(Math.abs(hL - hR) / 2.5)));
+      for (let j = 0; j < strips; j++) {
+        const u0 = j / strips, u1 = (j + 1) / strips;
         const x0 = -hw + 2 * hw * u0, x1 = -hw + 2 * hw * u1;
-        const TL = pt(x0, hh), TR = pt(x1, hh), BL = pt(x0, -hh);
+        const TL = pt(x0, hh), TR = pt(x1, hh), BL = pt(x0, -hh), BR = pt(x1, -hh);
         const sw = W * (u1 - u0);
-        // Affine map: source strip (0,0)-(sw,H) onto TL / TR / BL, scaled to device px.
-        const a = (TR.x - TL.x) / sw, b = (TR.y - TL.y) / sw;
-        const cc = (BL.x - TL.x) / H, d = (BL.y - TL.y) / H;
-        ctx.setTransform(dpr * a, dpr * b, dpr * cc, dpr * d, dpr * TL.x, dpr * TL.y);
+        // Map the strip's horizontal mid-line exactly, with the average height:
+        // the residual error is split between top and bottom instead of piling up
+        // at the bottom edge as stair-steps.
+        const mLx = (TL.x + BL.x) / 2, mLy = (TL.y + BL.y) / 2;
+        const mRx = (TR.x + BR.x) / 2, mRy = (TR.y + BR.y) / 2;
+        const hAvg = (BL.y - TL.y + (BR.y - TR.y)) / 2;
+        const a = (mRx - mLx) / sw, b = (mRy - mLy) / sw, d = hAvg / H;
+        ctx.setTransform(dpr * a, dpr * b, 0, dpr * d, dpr * mLx, dpr * (mLy - (d * H) / 2));
         // +1px of source overlap hides seams between strips.
         ctx.drawImage(img, W * u0, 0, Math.min(sw + 1, W - W * u0), H, 0, 0, sw + 1, H);
       }
@@ -134,15 +156,22 @@ export function createCanvas2D(): Tier {
     target.rect(x - 4, y + h * (1 - dev) - 1, w + 8, h * dev + 2);
     target.clip();
     target.globalAlpha = dev * n.opacity;
-    // Plain ink, source-over: identical to the DOM <h1> at rest.
-    target.drawImage(ink!.full, 0, 0, src.width, sh, x, y, w, h);
+    // Plain ink, source-over: identical to the DOM <h1> at rest. Only the on-screen
+    // part is sampled: when the camera is inside the "A" the name is ~10x the
+    // viewport, and resampling the whole texture cost a dropped frame.
+    const vw = m.layout.vw, vh = m.layout.vh;
+    const cx0 = Math.max(x, 0), cy0 = Math.max(y, 0);
+    const cx1 = Math.min(x + w, vw), cy1 = Math.min(y + h, vh);
+    if (cx1 > cx0 && cy1 > cy0) {
+      const kx = src.width / w, ky = sh / h;
+      target.drawImage(ink!.full, (cx0 - x) * kx, (cy0 - y) * ky, (cx1 - cx0) * kx, (cy1 - cy0) * ky, cx0, cy0, cx1 - cx0, cy1 - cy0);
+    }
     target.restore();
 
     if (lens) {
       // The lens: a circle at the pointer (or the tap) shows the name magnified,
       // with the red and blue records offset along the motion — the same reveal as
       // tier 1, with a hard circular edge instead of a displaced one.
-      const vw = m.layout.vw, vh = m.layout.vh;
       const tap = inp.ripple.age >= 0 && inp.pointer.presence < 0.5;
       const cx = tap ? inp.ripple.x : inp.pointer.x;
       const cy = tap ? inp.ripple.y : inp.pointer.y;
@@ -189,38 +218,29 @@ export function createCanvas2D(): Tier {
         g: tinted(a.name.canvas, 'rgb(0,233,0)'),
         b: tinted(a.name.canvas, 'rgb(0,0,225)'),
       };
-      grain = ctx.createPattern(noise(), 'repeat');
+      sources = a.images.map(downscale);
       size();
     },
     render(frame: Frame, inp: Inputs) {
       if (!model || !assets) return;
-      const dpr = tier.dpr;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'source-over';
       ctx.fillStyle = BG;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.imageSmoothingQuality = 'low';
 
       // Far to near.
       const order = frame.planes.map((p, i) => [frame.cam.z - p.z, i] as const).sort((a, b) => b[0] - a[0]);
       for (const [ahead, i] of order) {
         const p = frame.planes[i];
         if (ahead <= model.near || p.opacity < 0.001) continue;
-        drawPlane(assets.images[i], p, frame.cam);
+        drawPlane(sources[i], p, frame.cam);
       }
       drawName(frame, inp);
 
-      // Grain at 24fps: a noise tile offset per film frame.
-      if (grain && frame.grain > 0.01) {
-        const f = Math.floor(inp.time * 24);
-        ctx.setTransform(dpr, 0, 0, dpr, (f * 37) % 128, (f * 71) % 128);
-        ctx.globalAlpha = frame.grain;
-        ctx.globalCompositeOperation = 'lighter';
-        ctx.fillStyle = grain;
-        ctx.fillRect(-128, -128, model.layout.vw + 256, model.layout.vh + 256);
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.globalAlpha = 1;
-      }
+      // No grain in tier 2: it is material, not behaviour, and a full-canvas
+      // composite per frame is exactly what the CPU path cannot afford.
     },
     setDpr(dpr: number) {
       tier.dpr = dpr;

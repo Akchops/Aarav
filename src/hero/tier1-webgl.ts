@@ -182,6 +182,12 @@ export function createWebGL(caps: Caps, allowCaveat: boolean, onLost: () => void
         scene.add(mesh);
         return mesh;
       });
+
+      // Upload every texture and compile every program now. Three does both lazily
+      // on first draw, which turned the moment a frame first came into view into a
+      // 33ms hitch mid-scrub.
+      textures.forEach((t) => renderer.initTexture(t));
+      renderer.compile(scene, camera);
     },
 
     render(frame: Frame, inp: Inputs) {
@@ -227,7 +233,8 @@ export function createWebGL(caps: Caps, allowCaveat: boolean, onLost: () => void
         const mesh = planes[i];
         if (!mesh) return;
         const ahead = cam.z - p.z;
-        mesh.visible = ahead > model!.near && p.opacity > 0.001;
+        // Unlit frames are black on black: skip their fill entirely.
+        mesh.visible = ahead > model!.near && p.opacity > 0.001 && p.bright > 0.01;
         if (!mesh.visible) return;
         mesh.position.set(p.x, p.y, p.z);
         mesh.rotation.set(0, p.rotY, 0);
@@ -262,7 +269,8 @@ export function createWebGL(caps: Caps, allowCaveat: boolean, onLost: () => void
       // Browsers cap live contexts; release ours explicitly (listener removed first,
       // so this does not trigger the fallback).
       try {
-        renderer.forceContextLoss();
+        // Only if still alive: forcing loss on a lost context logs a warning.
+        if (!gl!.isContextLost()) renderer.forceContextLoss();
       } catch {
         /* ignore */
       }

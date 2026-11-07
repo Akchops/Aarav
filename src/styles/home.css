@@ -67,21 +67,31 @@
   text-transform: uppercase;
   color: var(--c-dust);
 }
+/* Foreground slates sit on a black slate board, so they stay legible over
+   whatever the canvas is showing (the ink of the name, a lit frame). */
+.stage .status,
+.stage__timecode {
+  background: var(--c-black);
+  padding: 6px 10px;
+}
 .stage .status {
   position: absolute;
-  left: var(--pad-l);
-  bottom: 24px;
+  left: calc(var(--pad-l) - 10px);
+  bottom: 18px;
   z-index: 2;
 }
 .stage__timecode {
   position: absolute;
-  right: var(--pad-r);
-  bottom: 24px;
+  right: calc(var(--pad-r) - 10px);
+  bottom: 18px;
   z-index: 2;
   font: 500 12px/1.2 var(--f-mono);
   letter-spacing: 0.08em;
   font-variant-numeric: tabular-nums;
   color: var(--c-dust);
+  /* It changes every few scrolled pixels: contain it so each tick is a tiny,
+     isolated layout instead of a page-level one. */
+  contain: layout paint style;
 }
 
 /* Tier 3 still: in the DOM unconditionally; the canvas tiers paint over it. */

@@ -296,7 +296,8 @@ class Runtime {
 
   private dprFor(kind: 1 | 2) {
     const d = window.devicePixelRatio || 1;
-    if (kind === 2) return Math.min(d, 1.5);
+    // Tier 2 is CPU-rendered: 1x on touch screens (pixel cost dominates), 1.5x cap otherwise.
+    if (kind === 2) return matchMedia('(pointer: coarse)').matches ? 1 : Math.min(d, 1.5);
     const t = this.caps?.tier;
     // 3x DPR costs 2.25x the fill of 2x for no perceptible gain.
     return Math.min(d, t === 'high' ? 2 : t === 'medium' ? 1.5 : 1);

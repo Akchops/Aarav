@@ -47,9 +47,10 @@ void main() {
   // so a distant frame reads as unlit, not as a ghost.
   c = mix(uBlack, c, uBright);
 
-  // Grain, fading out with assembly so the landed frame is clean.
+  // Grain, fading out with assembly so the landed frame is clean, and scaled by
+  // the light so an unlit frame is plain black, not a patch of noise in the dark.
   float g = hash12(gl_FragCoord.xy + floor(uTime * 24.0) * vec2(17.0, 59.0));
-  c += (g - 0.5) * 0.06 * uGrain * (1.0 - uAssemble);
+  c += (g - 0.5) * 0.06 * uGrain * (1.0 - uAssemble) * uBright;
 
   gl_FragColor = vec4(c, uOpacity);
 }

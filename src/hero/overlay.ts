@@ -9,6 +9,16 @@ import type { Frame, SceneModel } from './model';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
+/** Write a style property only when it changed: no redundant style invalidation per frame. */
+const cache = new WeakMap<HTMLElement, Record<string, string>>();
+function set(el: HTMLElement, prop: string, value: string) {
+  let c = cache.get(el);
+  if (!c) cache.set(el, (c = {}));
+  if (c[prop] === value) return;
+  c[prop] = value;
+  el.style.setProperty(prop, value);
+}
+
 export class Overlay {
   private labels: HTMLElement[] = [];
   private readonly role: HTMLElement | null;
@@ -60,11 +70,11 @@ export class Overlay {
     const m = this.model;
     if (!m) return;
 
-    this.stage.style.opacity = String(f.overlay);
+    set(this.stage, 'opacity', f.overlay.toFixed(3));
     // Once the overlay is going, the grid beneath must be clickable.
-    this.stage.style.pointerEvents = f.overlay < 0.5 ? 'none' : '';
-    this.stage.style.visibility = f.overlay < 0.001 ? 'hidden' : '';
-    if (this.role) this.role.style.opacity = String(f.role);
+    set(this.stage, 'pointer-events', f.overlay < 0.5 ? 'none' : 'auto');
+    set(this.stage, 'visibility', f.overlay < 0.001 ? 'hidden' : 'visible');
+    if (this.role) set(this.role, 'opacity', f.role.toFixed(3));
 
     // Timecode: an honest readout of scroll position, 1 film frame per 8px, 24fps.
     if (this.timecode) {
@@ -78,34 +88,34 @@ export class Overlay {
       const p = f.planes[i];
       const o = f.labels[i] ?? 0;
       if (!p || o < 0.01) {
-        el.style.opacity = '0';
+        set(el, 'opacity', '0');
         return;
       }
       const lx = -p.w / 2;
       const c = Math.cos(p.rotY), s = Math.sin(p.rotY);
       const q = m.project({ x: p.x + lx * c, y: p.y - p.h / 2, z: p.z - lx * s }, f.cam);
       if (q.behind) {
-        el.style.opacity = '0';
+        set(el, 'opacity', '0');
         return;
       }
-      el.style.opacity = String(o);
-      el.style.transform = `translate3d(${q.x.toFixed(1)}px, ${(q.y + 10).toFixed(1)}px, 0)`;
+      set(el, 'opacity', o.toFixed(3));
+      set(el, 'transform', `translate3d(${q.x.toFixed(1)}px, ${(q.y + 10).toFixed(1)}px, 0)`);
     });
 
     if (this.card) {
-      this.card.style.opacity = String(f.card);
-      this.card.style.transform = `translate3d(0, ${f.cardShift.toFixed(1)}px, 0)`;
+      set(this.card, 'opacity', f.card.toFixed(3));
+      set(this.card, 'transform', `translate3d(0, ${f.cardShift.toFixed(1)}px, 0)`);
     }
 
     // Beat 5: status glides from its stage position into the settled header row,
     // and "Start a project" wipes in (clip-path) after it.
     const e = easeInOut(f.settle);
     if (this.statusSettle) {
-      this.statusSettle.style.transform = `translate3d(${(this.flip.dx * (1 - e)).toFixed(1)}px, ${(this.flip.dy * (1 - e)).toFixed(1)}px, 0)`;
+      set(this.statusSettle, 'transform', `translate3d(${(this.flip.dx * (1 - e)).toFixed(1)}px, ${(this.flip.dy * (1 - e)).toFixed(1)}px, 0)`);
     }
     if (this.cta) {
       const w = easeOut(clamp01((f.settle - 0.25) / 0.75));
-      this.cta.style.clipPath = w >= 1 ? '' : `inset(0 ${((1 - w) * 100).toFixed(2)}% 0 0)`;
+      set(this.cta, 'clip-path', w >= 1 ? 'none' : `inset(0 ${((1 - w) * 100).toFixed(2)}% 0 0)`);
     }
   }
 
@@ -117,6 +127,7 @@ export class Overlay {
       el.style.removeProperty('clip-path');
       el.style.removeProperty('pointer-events');
       el.style.removeProperty('visibility');
+      cache.delete(el);
     }
     this.labels.forEach((l) => l.remove());
     this.labels = [];
