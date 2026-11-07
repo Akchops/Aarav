@@ -78,7 +78,10 @@ for (const [re, what] of [
 // and the library home pages GSAP and three.js print in console warnings.
 // Anything else is reported.
 const urls = [...new Set(html.match(/https?:\/\/[^\s"'`)<>\\]+/g) || [])];
-const allowed = urls.filter((u) => /^http:\/\/www\.w3\.org\//.test(u) || /^https:\/\/(threejs\.org|gsap\.com|greensock\.com)(\/|$)/.test(u));
+// Allowed: namespace strings, licence/warning strings inside the inlined
+// libraries, and the WhatsApp contact link (an <a href> the visitor follows —
+// the page itself never requests it).
+const allowed = urls.filter((u) => /^http:\/\/www\.w3\.org\//.test(u) || /^https:\/\/(threejs\.org|gsap\.com|greensock\.com)(\/|$)/.test(u) || /^https:\/\/wa\.me\/\d+$/.test(u));
 const unexpected = urls.filter((u) => !allowed.includes(u));
 if (unexpected.length) problems.push('unexpected absolute URLs: ' + unexpected.join(', '));
 // Archivo, Instrument Sans, Plex Mono 400 and 500: four latin faces, or the page

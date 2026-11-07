@@ -8,7 +8,7 @@
     "build": "tsc --noEmit -p tsconfig.json && vite build",
     "preview": "wrangler pages dev dist --port 4173",
     "budget": "node scripts/budget-all.mjs",
-    "qa:motion": "node scripts/motion-qa.mjs http://127.0.0.1:4173 --out ./qa-run --viewports 320,390,1440",
+    "qa:motion": "node scripts/motion-qa.mjs http://127.0.0.1:4173 --out ./qa-run --sizes 320x568,390x844,768x1024,1280x800",
     "qa:perf": "node scripts/perf-scrub.mjs",
     "build:preview": "node scripts/build-preview.mjs"
   },
@@ -16,13 +16,11 @@
     "@fontsource-variable/archivo": "^5.3.0",
     "@fontsource-variable/instrument-sans": "^5.3.0",
     "@fontsource/ibm-plex-mono": "^5.3.0",
-    "gsap": "^3.15.1",
-    "three": "^0.187.0"
+    "gsap": "^3.15.1"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261107.1",
     "@types/node": "^26.6.6",
-    "@types/three": "^0.187.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.6",
     "wrangler": "^4.158.0"

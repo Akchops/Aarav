@@ -117,3 +117,33 @@ export function renderFooter(): string {
   <p class="site-footer__fine"><span>${esc(site.brand)} — ${esc(site.role)}</span><span aria-hidden="true">END OF REEL</span></p>
 </footer>`;
 }
+
+/**
+ * Homepage header: not pinned. Name left, Archive + Contact right, and the status
+ * line. On narrow screens the status sits under the name inside the same row
+ * (name + two links + an 18-character status cannot share one 288px line).
+ */
+export function renderHomeHeader(): string {
+  return `<header class="hhead">
+  <div class="hhead__id">
+    <a class="hhead__name" href="/" aria-current="page">${esc(site.brand)}</a>
+    ${renderStatus('hhead__status')}
+  </div>
+  <nav class="hhead__nav" aria-label="Primary">
+    <ul role="list">
+      <li><a class="nav__link" href="/work/">Archive</a></li>
+      <li><a class="nav__link" href="/contact/">Contact</a></li>
+    </ul>
+  </nav>
+</header>`;
+}
+
+/** Homepage footer: the three contact routes as real links, and the status line. */
+export function renderHomeFooter(): string {
+  return `<footer class="hfoot">
+  <h2 class="label hfoot__h">Contact</h2>
+  ${renderContactRoutes()}
+  ${renderStatus('status--footer')}
+  <p class="site-footer__fine"><span>${esc(site.brand)} — ${esc(site.role)}</span></p>
+</footer>`;
+}

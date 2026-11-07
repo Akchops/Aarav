@@ -23,7 +23,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 2000,
     rollupOptions: {
       input: { home: r('./index.html') },
-      // One chunk: every dynamic import (GSAP, three, the tiers) is inlined.
+      // One chunk: every dynamic import (GSAP, the WebGL and Canvas 2D tiers) is inlined.
       output: { codeSplitting: false },
     },
   },

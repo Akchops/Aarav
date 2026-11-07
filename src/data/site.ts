@@ -4,7 +4,7 @@
  * given directly — do not edit without Aarav's say-so.
  */
 export const site = {
-  brand: 'Aarav',
+  brand: 'Aarav Chopra',
   role: 'Website Builder',
   status: 'Taking new clients',
 

@@ -10,9 +10,11 @@
  * It gathers evidence. It does NOT decide the verdict — naming the signature
  * interaction is a judgement made by looking at the frames.
  *
- * Project copy of the immersive-motion-qa skill script. One addition:
- * --viewports <widths> limits the matrix (approved trim for this project:
- * --viewports 320,390,1440 = 3 x 9 = 27 captures). Without it, all six run.
+ * Project copy of the immersive-motion-qa skill script. Two additions:
+ * --viewports <widths> limits the matrix to those of the six default widths
+ * (v1 trim: --viewports 320,390,1440 = 27 captures), and --sizes <WxH,...>
+ * replaces the matrix outright (homepage v2: --sizes 320x568,390x844,768x1024,
+ * 1280x800 = 4 x 9 = 36 captures). Without either, all six run.
  *
  *   node motion-qa.mjs http://localhost:5173
  *   node motion-qa.mjs https://staging.example.com --out ./qa-run --settle 900
@@ -84,6 +86,11 @@ const DEPTHS = [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1];
 const onlyWidths = opt('viewports', '').split(',').map(Number).filter(Boolean);
 if (onlyWidths.length) {
   for (let i = VIEWPORTS.length - 1; i >= 0; i--) if (!onlyWidths.includes(VIEWPORTS[i].width)) VIEWPORTS.splice(i, 1);
+}
+// Project addition: --sizes 320x568,1280x800 replaces the matrix with exact sizes.
+const sizes = opt('sizes', '').split(',').map((s) => s.trim().match(/^(\d+)x(\d+)$/)).filter(Boolean);
+if (sizes.length) {
+  VIEWPORTS.splice(0, VIEWPORTS.length, ...sizes.map((m) => ({ name: `${m[1]}x${m[2]}`, width: Number(m[1]), height: Number(m[2]) })));
 }
 
 // Makes every WebGL context request return null, without touching 2d.

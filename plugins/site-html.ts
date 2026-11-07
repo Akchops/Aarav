@@ -13,8 +13,11 @@ import {
   renderFooter,
   renderGrid,
   renderHeader,
+  renderHomeFooter,
+  renderHomeHeader,
   renderStatus,
 } from '../src/work/render-grid';
+import { renderClose, renderFeatured, renderReveal, renderSet } from '../src/home/featured';
 
 type Page = 'home' | 'work' | 'about' | 'contact';
 
@@ -51,7 +54,14 @@ export function siteHtml(): Plugin {
           .replace('<!--@grid:h3-->', renderGrid(data, 'h3'))
           .replace('<!--@contact-routes-->', renderContactRoutes())
           .replace('<!--@status-->', renderStatus('', ' data-status'))
-          .replace('<!--@status:settle-->', renderStatus('status--settle', ' aria-hidden="true" data-status-settle'));
+          .replace('<!--@status:settle-->', renderStatus('status--settle', ' aria-hidden="true" data-status-settle'))
+          // Homepage: every section rendered from projects.ts / site.ts.
+          .replace('<!--@home:header-->', renderHomeHeader())
+          .replace('<!--@home:reveal-->', renderReveal())
+          .replace('<!--@home:set-->', renderSet(data))
+          .replace('<!--@home:featured-->', renderFeatured(data))
+          .replace('<!--@home:close-->', renderClose(data))
+          .replace('<!--@home:footer-->', renderHomeFooter());
 
         // Dev-only worst-case toggle (break-ui): a segmented control, bottom-centre,
         // swapping the fixture at the data boundary via ?fixture=. Never in a build.

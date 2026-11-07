@@ -1,242 +1,456 @@
 /*
- * Home scene.
+ * Homepage — one continuous scroll: #reveal → #set → #featured → #close.
  *
- * Base layout (no JS, reduced motion, script error, tier 3): two stacked blocks —
- * the title card (.stage), then the settled grid (.settle). Every fact is here.
+ * Base layout = no JavaScript, reduced motion, ?tier=3 or any failure: every
+ * section stacked, every fact visible, every beat's final state in place.
+ * Cinematic layout = classes added only once a part is live (#reveal.is-live,
+ * .strip.is-live, .close.is-live) or chosen before first paint (html.motion,
+ * which only locks The Set until the reveal completes).
  *
- * Cinematic layout (html.motion — chosen before first paint by the head script
- * in index.html, so mounting the scene causes no layout shift): .stage becomes a
- * 100svh overlay on top of .settle, and the whole .scene is pinned for the beat
- * sheet. Any failure to mount removes .motion and the stacked layout returns. The overlay hides nothing that is not
- * also in .settle, and it fades away at the end of beat 4.
+ * Grid: 4 columns under 768px, 8 at 768-1023px, 12 at 1024px and up. Content
+ * hangs from column 3; nothing is centred except #close's full-frame image.
  */
-.scene { position: relative; }
+.hgrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: var(--gutter);
+}
+@media (min-width: 768px) { .hgrid { grid-template-columns: repeat(8, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .hgrid { grid-template-columns: repeat(12, minmax(0, 1fr)); } }
 
-/* ---------- Title card ---------- */
-.stage {
+/* ---------------------------------------------------------------- header (not pinned) */
+.hhead {
   position: relative;
-  min-height: max(100svh, 520px);
-  background: var(--c-black);
-  overflow: hidden;
-  /* The scene owns horizontal touch (the smear) but never vertical: scrolling always works. */
-  touch-action: pan-y;
-}
-.stage__gate {
-  position: absolute;
-  top: calc(var(--header-total) + 16px);
-  left: var(--pad-l);
-  right: var(--pad-r);
-  bottom: 64px;
-  border: 1px solid var(--c-line);
-  pointer-events: none;
-  z-index: 2;
-}
-.stage__gate i {
-  position: absolute;
-  width: 11px;
-  height: 11px;
-  background: var(--cross) center / 11px 11px no-repeat;
-}
-.stage__gate i:nth-child(1) { left: -17px; top: -17px; }
-.stage__gate i:nth-child(2) { right: -17px; top: -17px; }
-.stage__gate i:nth-child(3) { left: -17px; bottom: -17px; }
-.stage__gate i:nth-child(4) { right: -17px; bottom: -17px; }
-
-.stage__copy {
-  position: absolute;
-  left: calc(var(--pad-l) + 12px);
-  right: var(--pad-r);
-  bottom: 76px;
-  z-index: 2;
+  z-index: 5;
   display: flex;
-  flex-direction: column-reverse;
-  align-items: flex-start;
-  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: calc(64px + var(--safe-t));
+  padding: calc(8px + var(--safe-t)) var(--pad-r) 8px var(--pad-l);
+  background: var(--c-black);
+}
+/* A 24px fade at the bottom edge instead of a border. */
+.hhead::after {
+  content: '';
+  position: absolute;
+  inset: 100% 0 auto 0;
+  height: 24px;
+  background: linear-gradient(var(--c-black), rgb(11 11 10 / 0));
   pointer-events: none;
 }
-.stage__name {
-  font: 900 var(--name-size)/0.82 var(--f-display);
+@media (prefers-reduced-transparency: reduce) { .hhead::after { display: none; } }
+.hhead__id { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+/* A 44px hit area laid out as 28px: the -8px margins keep the row's rhythm, and
+   the 10px gap keeps the hit area off the status line beneath it. */
+.hhead__name {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-block: -8px;
+  font: 800 20px/1 var(--f-display);
+  font-stretch: 75%;
+  letter-spacing: -0.01em;
+  color: var(--c-screen);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.hhead__status { font-size: 11px; white-space: nowrap; }
+.hhead__nav ul { display: flex; gap: 4px; }
+.hhead__nav .nav__link { padding: 0 8px; justify-content: center; }
+@media (min-width: 768px) {
+  .hhead__id { flex-direction: row; align-items: center; gap: 28px; }
+  .hhead__status { font-size: 12px; }
+}
+
+/* ---------------------------------------------------------------- #reveal (Scroll Film 1) */
+.reveal__stage {
+  position: relative;
+  height: 100svh;
+  min-height: 460px;
+  overflow: hidden;
+  background: var(--c-black);
+  touch-action: pan-y; /* vertical scroll always works; the lens takes horizontal drags */
+}
+/* Static layer: every beat's final state, stacked in place. */
+.reveal__copy {
+  position: absolute;
+  left: calc(var(--pad-l) + 2px);
+  right: var(--pad-r);
+  top: 34%;
+  display: grid;
+  gap: clamp(10px, 2vw, 20px);
+}
+.reveal__name {
+  font: 900 clamp(2.5rem, 12.5vw, 13rem)/0.84 var(--f-display);
   font-stretch: 75%;
   letter-spacing: var(--name-track);
-  color: var(--c-screen);
-  /* Keep descender-free ink tight to the frame-line. */
-  margin-bottom: -0.04em;
-}
-.stage__role {
-  font: 500 12px/1.2 var(--f-mono);
-  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--c-dust);
+  color: var(--c-screen);
+  overflow-wrap: anywhere;
 }
-/* Foreground slates sit on a black slate board, so they stay legible over
-   whatever the canvas is showing (the ink of the name, a lit frame). */
-.stage .status,
-.stage__timecode {
-  background: var(--c-black);
-  padding: 6px 10px;
+.reveal__role {
+  font: 500 clamp(1.375rem, 3vw, 2.75rem)/1.1 var(--f-body);
+  letter-spacing: 0;
+  color: var(--c-screen);
 }
-.stage .status {
+.reveal__status {
   position: absolute;
-  left: calc(var(--pad-l) - 10px);
-  bottom: 18px;
-  z-index: 2;
+  left: var(--pad-l);
+  bottom: calc(28px + var(--safe-b));
 }
-.stage__timecode {
-  position: absolute;
-  right: calc(var(--pad-r) - 10px);
-  bottom: 18px;
-  z-index: 2;
-  font: 500 12px/1.2 var(--f-mono);
-  letter-spacing: 0.08em;
-  font-variant-numeric: tabular-nums;
-  color: var(--c-dust);
-  /* It changes every few scrolled pixels: contain it so each tick is a tiny,
-     isolated layout instead of a page-level one. */
-  contain: layout paint style;
-}
-
-/* Tier 3 still: in the DOM unconditionally; the canvas tiers paint over it. */
-.stage__still {
-  position: absolute;
-  z-index: 1;
-  top: calc(var(--header-total) + 40px);
-  left: calc(var(--pad-l) + 16px);
-  right: calc(var(--pad-r) + 16px);
-  width: auto;
-  aspect-ratio: 16 / 9;
-  height: auto;
-  object-fit: cover;
-  outline: 1px solid var(--c-line);
-}
-@media (min-width: 768px) {
-  .stage__still { left: auto; width: min(46vw, 720px); }
-}
-@media (max-height: 640px) and (max-width: 767px) {
-  .stage__still { width: 60%; left: auto; }
-}
-
-/* The canvas tiers. */
-.stage__fx {
+.reveal__fx {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  z-index: 1;
+  display: block;
 }
+/* Live (tier 1 or 2): the canvas draws the name; the DOM copy stays in the
+   accessibility tree, invisible. The status line is moved by the timeline. */
+#reveal.is-live .reveal__copy { opacity: 0; }
+#reveal.is-live .reveal__status { z-index: 2; will-change: transform, opacity; }
 
-/* Overlay pieces used only by the cinematic tiers. */
-.stage__labels,
-.stage__card { display: none; }
-
-/* ---------- Settled frame ---------- */
-.settle {
-  padding: 48px var(--pad-r) 0 var(--pad-l);
-}
-.settle__head {
+/* ---------------------------------------------------------------- #set (The Set) */
+.set {
+  padding: clamp(72px, 12vw, 144px) var(--pad-r) clamp(48px, 8vw, 96px) var(--pad-l);
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-  gap: 4px 16px;
-  margin-bottom: 20px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: var(--gutter);
 }
-.settle__head .button { grid-column: 2; grid-row: 1; align-self: end; }
-.settle__name {
-  grid-column: 1;
-  grid-row: 1;
-  font: 900 clamp(2.75rem, 7vw, 4.5rem)/0.82 var(--f-display);
+.set__h, .set__lede, .pieces { grid-column: 1 / -1; }
+.set__h {
+  font: 800 clamp(2.5rem, 7vw, 5rem)/0.9 var(--f-display);
   font-stretch: 75%;
-  letter-spacing: var(--name-track);
+  letter-spacing: -0.025em;
   color: var(--c-screen);
 }
-.status--settle { grid-column: 1 / -1; grid-row: 2; white-space: nowrap; }
-.settle__label { margin-bottom: 16px; }
-.settle__more { margin-top: 32px; }
-
-/* Duplicates that exist only as landing targets for the cinematic tiers. */
-:root:not(.motion) .scene .settle__name,
-:root:not(.motion) .scene .status--settle { display: none; }
-:root:not(.motion) .scene .settle__head { grid-template-columns: 1fr; justify-items: start; }
-:root:not(.motion) .scene .settle__head .button { grid-column: 1; grid-row: auto; }
-
-/* ---------- Cinematic layout ---------- */
-.motion .scene .stage {
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 100svh;
-  min-height: 0;
-  z-index: 3;
+.set__lede { margin-top: 12px; color: var(--c-dust); font-size: 1.125rem; }
+.pieces {
+  margin-top: clamp(32px, 5vw, 56px);
+  display: grid;
+  gap: clamp(32px, 5vw, 56px) var(--gutter);
+  grid-template-columns: minmax(0, 1fr);
 }
-.motion .scene .settle {
-  min-height: 100svh;
-  padding-top: calc(var(--header-total) + 20px);
+@media (min-width: 768px) {
+  .set { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  .set__h, .set__lede { grid-column: 2 / -1; }
+  .pieces { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  .piece--strip { grid-column: 1 / -1; }
+  .piece--lens { grid-column: 1 / span 5; }
+  .piece--develop { grid-column: 6 / span 3; align-self: end; }
 }
-.motion .scene .stage__labels,
-.motion .scene .stage__card {
-  display: block;
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
+@media (min-width: 1024px) {
+  .set { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  .set__h, .set__lede { grid-column: 3 / -1; }
+  .pieces { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  .piece--strip { grid-column: 1 / -1; }
+  .piece--lens { grid-column: 3 / span 6; }
+  .piece--develop { grid-column: 9 / span 4; }
 }
-.stage__label {
-  position: absolute;
-  left: 0;
-  top: 0;
-  max-width: 40vw;
+.piece { position: relative; min-width: 0; }
+.piece__cap {
+  margin-top: 10px;
   font: 500 12px/1.3 var(--f-mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--c-screen);
+  color: var(--c-dust);
+}
+/* Locked until the reveal completes — only in the motion layout, never without
+   JavaScript and never under reduced motion. */
+.piece__lock { display: none; }
+.motion #set:not(.is-unlocked) .piece__lock {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  background: var(--c-gate);
+  outline: 1px solid var(--c-line);
+  font: 500 12px/1.3 var(--f-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-dust);
+}
+.motion #set:not(.is-unlocked) .piece__body { opacity: 0; transform: translateY(12px); }
+.motion #set .piece__body { transition: opacity 240ms var(--ease-out), transform 240ms var(--ease-out); }
+/* The unlock: one after another, 80ms apart. */
+.motion #set .piece:nth-child(2) .piece__body { transition-delay: 80ms; }
+.motion #set .piece:nth-child(3) .piece__body { transition-delay: 160ms; }
+
+/* Piece A — Strip */
+.strip {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px;
+  background: var(--c-gate);
+  outline: 1px solid var(--c-line);
+  touch-action: pan-y;
+}
+.sframe {
+  display: grid;
+  gap: 6px;
+  width: clamp(104px, 28%, 200px);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.sframe__img {
+  display: block;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: var(--c-black);
+  outline: 1px solid var(--c-line);
+}
+.sframe__img img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+.sframe__empty {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  font: 500 11px/1.2 var(--f-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-dust);
+}
+.sframe__slate {
+  font: 500 11px/1.2 var(--f-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-dust);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  will-change: transform, opacity;
 }
-/* Beat 3's full-frame card: a black slate board over the projected frame, so the
-   copy stays legible over any screenshot. */
-.motion .scene .stage__card {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  align-items: flex-start;
-  padding: 0 var(--pad-r) 96px calc(var(--pad-l) + 12px);
-  opacity: 0;
+.strip.is-live { display: block; height: clamp(280px, 46vw, 460px); overflow: hidden; padding: 0; }
+.strip.is-live .sframe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  touch-action: none; /* the frame owns its drag; the strip around it still scrolls */
+  cursor: grab;
+  will-change: transform;
 }
-.stage__card > * {
-  max-width: min(42rem, 100%);
+.strip.is-live .sframe.is-dragging { cursor: grabbing; z-index: 3; }
+
+/* Piece B — Lens */
+.lens__btn {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  padding: 0;
+  border: 0;
+  background: var(--c-black);
+  overflow: hidden;
+  outline: 1px solid var(--c-line);
+  cursor: crosshair;
+  touch-action: pan-y; /* horizontal drags move the lens; vertical drags scroll */
+}
+.lens__img { width: 100%; height: 100%; object-fit: cover; }
+.lens__fx { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* Piece C — Develop */
+.develop__btn {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  padding: 0;
+  border: 0;
+  background: var(--c-gate);
+  outline: 1px solid var(--c-line);
+  overflow: hidden;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+/* Their 1px frame-line is an outline, which would beat the global focus ring on
+   specificity order: restate the ring for both. */
+.lens__btn:focus-visible,
+.develop__btn:focus-visible { outline: 2px solid var(--c-tally); outline-offset: 3px; }
+.develop__img { position: absolute; inset: 0; }
+.develop__img img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+.develop__label,
+.develop__done {
+  position: absolute;
+  font: 500 12px/1.3 var(--f-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.develop__label { inset: 0; display: none; place-items: center; color: var(--c-dust); }
+.develop__done {
+  display: none;
+  left: 10px;
+  bottom: 10px;
+  padding: 6px 10px;
+  background: var(--c-black);
+  color: var(--c-screen);
+}
+.develop.is-live .develop__label { display: grid; }
+.develop.is-live.is-developed .develop__label { display: none; }
+.develop.is-developed .develop__done { display: block; }
+
+/* ---------------------------------------------------------------- #featured */
+.featured {
+  padding: clamp(48px, 8vw, 96px) var(--pad-r) clamp(64px, 10vw, 128px) var(--pad-l);
+  touch-action: pan-y;
+}
+.featured__h { margin-bottom: 20px; }
+.fsheet {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: var(--gutter);
+  row-gap: 48px;
+}
+.fsheet__item { grid-column: 1 / -1; min-width: 0; }
+.fsheet__item:nth-child(even) { grid-column: 2 / -1; }
+@media (min-width: 768px) {
+  .featured__h { padding-left: calc((100% - 7 * var(--gutter)) / 8 + var(--gutter)); }
+  .fsheet { grid-template-columns: repeat(8, minmax(0, 1fr)); row-gap: 64px; }
+  .fsheet__item:nth-child(odd) { grid-column: 1 / span 4; }
+  .fsheet__item:nth-child(even) { grid-column: 5 / span 4; margin-top: clamp(48px, 9vw, 128px); }
+  /* One featured entry: offset, never centred. */
+  .fsheet[data-count='1'] .fsheet__item { grid-column: 2 / span 6; }
+}
+@media (min-width: 1024px) {
+  .featured__h { padding-left: calc(2 * ((100% - 11 * var(--gutter)) / 12 + var(--gutter))); }
+  .fsheet { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  .fsheet__item:nth-child(odd) { grid-column: 3 / span 5; }
+  .fsheet__item:nth-child(even) { grid-column: 8 / span 5; }
+  .fsheet[data-count='1'] .fsheet__item { grid-column: 3 / span 7; }
+}
+.gate--1610 { aspect-ratio: 16 / 10; }
+.fframe { display: grid; gap: 10px; min-width: 0; }
+.fframe .gate { margin-bottom: 4px; }
+.fslate {
+  font: 500 12px/1.45 var(--f-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-dust);
+  overflow-wrap: anywhere;
+}
+.fslate > * { display: inline; font: inherit; }
+.fslate__name { color: var(--c-screen); }
+.fframe__link,
+.fframe__nolink {
+  justify-self: start;
+  font: 500 12px/1.3 var(--f-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.fframe__link { display: inline-flex; align-items: center; min-height: 44px; }
+.fframe__nolink { color: var(--c-dust); }
+.featured__more { margin-top: 48px; }
+.featured__more .link { display: inline-flex; align-items: center; min-height: 44px; }
+
+/* ---------------------------------------------------------------- #close (Scroll Film 2) */
+.close__stage {
+  display: grid;
+  gap: 40px;
+  padding: clamp(48px, 8vw, 96px) var(--pad-r) clamp(48px, 8vw, 96px) var(--pad-l);
   background: var(--c-black);
 }
-.stage__card .slate { padding: 10px 14px 0; }
-.stage__card-name {
-  /* Bottom spacing is a border, not padding: a clamped box clips at its padding
-     edge, so padding would let the next line show through. */
-  padding: 8px 14px 0;
-  border-bottom: 4px solid var(--c-black);
-  font: 900 clamp(2.5rem, 9vw, 6.5rem)/0.9 var(--f-display);
+/* Static: the full-frame state (image + caption), then the closing slate. */
+.close__stack { display: none; }
+.close__full { display: grid; gap: 12px; max-width: 960px; }
+.close__full-clip { aspect-ratio: 16 / 10; overflow: hidden; outline: 1px solid var(--c-line); }
+.close__full-img { width: 100%; height: 100%; object-fit: cover; }
+.close__caption { display: grid; gap: 4px; }
+.close__caption-no,
+.close__caption-link,
+.cframe__slate {
+  font: 500 12px/1.3 var(--f-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-dust);
+}
+.close__caption-name {
+  font: 800 clamp(2rem, 6vw, 4rem)/0.95 var(--f-display);
   font-stretch: 75%;
-  letter-spacing: var(--name-track);
+  letter-spacing: -0.02em;
   color: var(--c-screen);
   overflow-wrap: anywhere;
-  /* break-ui: a long project name must not climb out of the frame. The card is a
-     decorative echo (aria-hidden); the full name is always in the grid beneath. */
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  overflow: hidden;
 }
-.stage__card-summary {
-  padding: 4px 14px 0;
-  border-bottom: 12px solid var(--c-black);
-  color: var(--c-screen);
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
+.close__copy { display: grid; gap: 20px; justify-items: start; max-width: 40rem; }
+.close__h { margin: 0; }
+.close__copy .routes { width: 100%; }
+
+/* Live: one 100svh stage; every layer placed by close.ts with transform and clip-path. */
+.close.is-live .close__stage {
+  position: relative;
+  display: block;
+  height: 100svh;
+  min-height: 480px;
+  padding: 0;
   overflow: hidden;
+  touch-action: pan-y;
 }
-/* While the canvas draws the name, the DOM copy stays in the accessibility tree, invisible. */
-/* The develop keyframes fill forwards, which would beat a plain opacity rule, so
-   the handoff cancels the animation as well. */
-.scene.is-handed .stage__name { animation: none; opacity: 0; }
-.motion .scene .stage__still { visibility: hidden; }
+.close.is-live .close__stack { display: block; position: absolute; inset: 0; }
+.close.is-live .cframe { position: absolute; left: 0; top: 0; margin: 0; will-change: transform; }
+.close.is-live .cframe__img {
+  display: block;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: var(--c-gate);
+  outline: 1px solid var(--c-line);
+}
+.close.is-live .cframe__img img { width: 100%; height: 100%; object-fit: cover; }
+.close.is-live .cframe__slate { margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.close.is-live .close__full { position: absolute; inset: 0; display: block; max-width: none; pointer-events: none; }
+.close.is-live .close__full-clip { position: absolute; inset: 0; aspect-ratio: auto; outline: 0; will-change: clip-path, transform; }
+.close.is-live .close__full-img { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; will-change: transform; }
+.close.is-live .close__caption {
+  position: absolute;
+  left: var(--pad-l);
+  bottom: calc(32px + var(--safe-b));
+  padding: 12px 14px;
+  background: var(--c-black);
+  max-width: min(36rem, calc(100% - var(--pad-l) - var(--pad-r)));
+  pointer-events: auto;
+}
+.close.is-live .close__copy {
+  position: absolute;
+  left: var(--pad-l);
+  right: var(--pad-r);
+  top: calc(24px + var(--safe-t));
+  max-width: 40rem;
+  gap: 14px;
+}
+.close.is-live .close__copy .route { min-height: 56px; padding: 8px 0; }
+
+/* ---------------------------------------------------------------- footer */
+.hfoot {
+  display: grid;
+  gap: 20px;
+  padding: 32px var(--pad-r) calc(32px + var(--safe-b)) var(--pad-l);
+  border-top: 1px solid var(--c-line);
+}
+.hfoot .routes { max-width: 40rem; }
+
+/* ---------------------------------------------------------------- Featured Work hover
+   Fine pointers only. The frame-line tightens ~2px inwards (scale 0.99 on a
+   ~400px frame) and the image scales to 1.03, 200ms --ease-out. Reduced motion:
+   an instant colour change, nothing moves.
+   Reduced by remove-animations: only a frame that links somewhere answers the
+   pointer (a.gate__clip exists only when the project has a url). A frame that
+   reads "Link not yet published" stays still — motion there promised a click
+   that does nothing. */
+@media (hover: hover) and (pointer: fine) {
+  .featured .fframe:has(a.gate__clip) .gate::after,
+  .featured .fframe:has(a.gate__clip) .gate__img { transition: transform 200ms var(--ease-out), opacity 200ms var(--ease-out); }
+  .featured .fframe:has(a.gate__clip):hover .gate::after { transform: scale(0.99); opacity: 1; }
+  .featured .fframe:has(a.gate__clip):hover .gate__img { transform: scale(1.03); }
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: reduce) {
+  .featured .fframe:has(a.gate__clip) .gate::after,
+  .featured .fframe:has(a.gate__clip) .gate__img { transition: none; }
+  .featured .fframe:has(a.gate__clip):hover .gate::after { transform: none; opacity: 1; }
+  .featured .fframe:has(a.gate__clip):hover .gate__img { transform: none; }
+}

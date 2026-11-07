@@ -14,19 +14,6 @@
 }
 .is-pressed { transform: scale(0.97); }
 
-@media (prefers-reduced-motion: no-preference) {
-  /* ---------- First load: the name develops out of the dark (1.4s, rare tier) ----------
-     CSS keyframes run off the main thread, so this never waits for Three.js.
-     The canvas tiers read this animation's currentTime and continue it seamlessly. */
-  .js .stage__name {
-    animation: develop 1400ms var(--ease-out) 200ms both;
-  }
-  @keyframes develop {
-    from { clip-path: inset(100% 0 0 0); opacity: 0; }
-    to   { clip-path: inset(0 0 0 0);    opacity: 1; }
-  }
-}
-
 /* ---------- Hover: fine pointers only (touch fires false hovers) ---------- */
 @media (hover: hover) and (pointer: fine) {
   /* Reduced by remove-animations: no scale, no lift. Only a linked frame answers

@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
  * perf-scrub.mjs — immersive-scroll-engineer Gate 5 measurement.
- * Scrubs the whole Home pin at 390x844 under 4x CPU throttling and reports frame
- * times. Gate: p95 >= 55fps (<= 18.2ms) and no frame over 32ms during the scrub.
+ * Scrubs the whole homepage (both pinned films, The Set, Featured Work) at 390x844
+ * under 4x CPU throttling and reports frame times. Gate: p95 >= 55fps (<= 18.2ms)
+ * and no frame over 32ms during the scrub.
  *
  *   node scripts/perf-scrub.mjs "http://127.0.0.1:4173/?tier=1"
  *
@@ -25,14 +26,11 @@ page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
 const cdp = await ctx.newCDPSession(page);
 await page.goto(url, { waitUntil: 'load' });
-if (!/tier=3/.test(url)) await page.waitForSelector('.scene.is-handed', { timeout: 20000 });
-await page.waitForTimeout(2000); // past the develop pre-roll and boot
+if (!/tier=3/.test(url)) await page.waitForSelector('#reveal.is-live', { timeout: 20000 });
+await page.waitForTimeout(2000); // fonts, the texture and the first refresh
 await cdp.send('Emulation.setCPUThrottlingRate', { rate });
 
-const total = await page.evaluate(() => {
-  const st = document.querySelector('.pin-spacer');
-  return st ? st.offsetHeight - innerHeight : document.documentElement.scrollHeight;
-});
+const total = await page.evaluate(() => document.documentElement.scrollHeight - innerHeight);
 await page.evaluate(() => {
   window.__ft = [];
   let last = performance.now();
@@ -47,7 +45,10 @@ for (let i = 1; i <= steps; i++) {
 }
 await page.waitForTimeout(800);
 const ft = await page.evaluate(() => { window.__stop = true; return window.__ft.slice(2); });
-const tierInfo = await page.evaluate(() => (document.querySelector('.stage__fx') ? 'canvas mounted' : 'no canvas'));
+const tierInfo = await page.evaluate(() => {
+  const c = document.querySelector('#reveal canvas');
+  return c ? `reveal canvas: ${c.getContext('webgl') ? 'WebGL (tier 1)' : 'Canvas 2D (tier 2)'}` : 'no canvas (tier 3)';
+});
 await browser.close();
 
 const sorted = [...ft].sort((a, b) => a - b);

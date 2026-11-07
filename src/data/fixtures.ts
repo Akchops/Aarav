@@ -5,33 +5,37 @@
  */
 import { projects, type Project } from './projects';
 
-// Plausible worst case, not nonsense: a long real-world-shaped project name with an
-// unbreakable compound word, and a summary at the length a client brief often has.
+const [kessel, prayatn] = projects;
+const third: Project = { ...prayatn, slug: 'prayatn-copy', name: 'Prayatn (fixture copy)' };
+
+// Featured counts 0-3.
+const f0: Project[] = projects.map((p) => ({ ...p, featured: false }));
+const f1: Project[] = [kessel, { ...prayatn, featured: false }];
+const f2: Project[] = [kessel, prayatn];
+const f3: Project[] = [kessel, prayatn, { ...third, featured: true }];
+
+// Plausible worst case: a long real-world-shaped name with an unbreakable compound
+// word, a long summary, and a very long URL.
 const long: Project[] = [
   {
-    ...projects[0],
-    name: 'Kesselhaus Werkstattgemeinschaft — Annual Open Studios Programme 2026–2027',
+    ...kessel,
+    name: 'Kesselhaus Werkstattgemeinschaft — Annual Open Studios Programme, Second Edition',
     summary:
       'A demo website for a cooperative of independent workshops, with a bilingual events calendar, a members directory and a booking flow for open-studio weekends across three neighbourhoods.',
   },
   {
-    ...projects[1],
-    name: 'Prayatn',
-    summary: 'A volunteer website for a non-profit.',
+    ...prayatn,
     url: 'https://prayatn-volunteer-network-foundation-international.example.org/get-involved/volunteer-opportunities',
   },
 ];
-
 const nourl: Project[] = projects.map((p) => ({ ...p, url: undefined }));
 const withurl: Project[] = projects.map((p) => ({ ...p, url: `https://example.com/${p.slug}` }));
 const noimage: Project[] = projects.map((p) => ({ ...p, image: undefined }));
-const single: Project[] = [projects[0]];
-const empty: Project[] = [];
 const many: Project[] = Array.from({ length: 8 }, (_, i) => ({
   ...projects[i % 2],
   slug: `${projects[i % 2].slug}-${i + 1}`,
   name: `${projects[i % 2].name} ${i + 1}`,
-  featured: i === 0,
+  featured: i % 3 === 0,
 }));
 
-export const fixtures: Record<string, Project[]> = { long, nourl, withurl, noimage, single, empty, many };
+export const fixtures: Record<string, Project[]> = { f0, f1, f2, f3, long, nourl, withurl, noimage, many };
