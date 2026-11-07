@@ -10,8 +10,10 @@ export default defineConfig({
   server: { host: true },
   build: {
     target: 'es2022',
-    // Every evergreen browser supports modulepreload; the polyfill is dead weight.
-    modulePreload: { polyfill: false },
+    // No <link rel="modulepreload">: with JavaScript disabled the browser still
+    // fetches (and blocks) preloaded modules, which shows up as a failed request.
+    // The only static import is the 0.6 kB boot chunk; budget-all counts it.
+    modulePreload: false,
     // The Three.js chunk (~135 kB gz) is lazy by design; it never counts against first load.
     chunkSizeWarningLimit: 600,
     rollupOptions: {

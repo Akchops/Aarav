@@ -1,6 +1,6 @@
 # PLAN.md — Aarav portfolio (Phase 0)
 
-> Status: **Approved 2026-11-07** with two changes: QA matrix trimmed to 320/390/1440; castle entry removed. Phase 1 in progress.
+> Status: **Approved 2026-11-07** (QA matrix trimmed to 320/390/1440; castle entry removed). **Phase 1 built, Phase 2 QA run** — see §14 for what changed during the build and the QA results.
 
 ## Context
 
@@ -101,7 +101,7 @@ Tracking is size-specific, per apple-design: negative on large type, 0 on body, 
 Every image sits in a **film gate**: a 1px frame-line with four registration crosses (+) just outside its corners. A mono **slate line** runs underneath, for example `SC 01 · KESSEL · DEMO WEBSITE`. The scene numbers come from array order in `projects.ts`, so nothing is invented. The hero corner carries a **timecode** that is an honest readout of scroll position at 24 fps of scroll, not a claim about anything. You can recognise the site from this motif without the logo.
 
 ### Work grid: a contact sheet, not a bento
-Frames are staggered in two offset columns: odd projects start high on the left, even ones start low on the right. All frames share a 16:10 aspect. A single project spans 8 of the 12 columns, offset. Zero projects shows an honest empty slate (§8). The grid uses `touch-action: pan-y`.
+Frames are staggered in two offset columns: odd projects start high on the left, even ones start low on the right. All frames share a 16:9 aspect (changed from 16:10 during the build, §14). A single project spans 8 of the 12 columns, anchored left. Zero projects shows an honest empty slate (§8). The grid uses `touch-action: pan-y`.
 
 ---
 
@@ -353,7 +353,7 @@ The real ceiling is about 100 enquiries a day, which is far above a portfolio's 
 1. **TODO** Kessel live URL (the brief contained the literal placeholder `[KESSEL_URL]`).
 2. **TODO** Prayatn live URL (`[PRAYATN_URL]`).
 3. **TODO** Confirm the +91 country code for tel: and WhatsApp, and that the number is on WhatsApp.
-4. **TODO** Project images: one 16:10 screenshot or still per project, at least 2400×1500. Alternatively, approval for a script to capture them from the live URLs.
+4. **TODO** Project images: one 16:9 screenshot or still per project, at least 2400×1350. Alternatively, approval for a script to capture them from the live URLs.
 5. **TODO** Hero poster still (tier 3). This can be captured from the finished scene once the project images exist.
 6. **TODO** Portrait photo for About, 4:5, at least 1600×2000.
 7. **TODO** About copy: who Aarav is, how he works, and anything else he wants said.
@@ -361,3 +361,66 @@ The real ceiling is about 100 enquiries a day, which is far above a portfolio's 
 9. **TODO** A Cloudflare account (free) to host the site, plus a KV namespace for rate limiting. The build includes the config, and the deploy steps go in the report.
 10. **TODO** A Resend account created **with aaravchopra1202@gmail.com**, an API key stored as a Cloudflare secret, and an HMAC secret. Real email delivery is unverified until then.
 11. **TODO** Optional production domain (canonical URLs, OG tags and a branded sender address), plus an OG share image. Until then the site runs on the `*.pages.dev` address.
+
+---
+
+## 14. Build record: deviations and QA results (2026-11-07)
+
+### Deviations from the approved plan
+| Plan said | Built | Why |
+|---|---|---|
+| Frames 16:10 | **16:9** | Two frames, the subtitle and the CTA fit inside the 320×568 settled frame. |
+| Pin the hero stage, with the grid beneath | **Pin the whole `.scene`**: the stage is a 100svh overlay over the settled grid | Beat 4 must land on frames that are really in the viewport, and the pin release must equal the natural layout. |
+| Tier 1 on WebGL2/1 | **WebGL2 only** | three.js r163+ has no WebGL1 renderer; WebGL1-only devices get tier 2. |
+| Cross-document View Transitions between pages | **Removed** (remove-animations) | Core navigation, every page change; also intermittently aborted with an unhandled `InvalidStateError` in Chromium. |
+| Work crop drift, tally flicker, beat-5 CTA wipe, hover scales, idle grain loop | **Removed or reduced** (remove-animations) | See the table below. |
+| Cinematic layout added when the canvas mounts | **Chosen before first paint** (`html.motion`, inline head script) | Mounting caused a CLS of 1.0; now 0.002. Reduced motion, `?tier=3`, any mount failure and a 10s safety timeout all fall back to the stacked layout. |
+| `<link rel="modulepreload">` | **Off** | With JS disabled the browser still fetched and blocked it (a failed request in the no-JS pass). The 0.3 kB boot chunk is counted by `scripts/budget-all.mjs`. |
+| Tier 2 grain | **No grain in tier 2** | Material, not behaviour; it was the costliest part of the CPU path. |
+
+### remove-animations
+| Was | Verdict | Deciding branch |
+|---|---|---|
+| Cross-document page transitions (400ms morph and 250ms crossfade) | Deleted, with `view-transitions.ts`, `modality.ts` and the inline `pagereveal` handlers | Core navigation, seen on every page change |
+| Work page crop drift (`animation-timeline: view()`) | Deleted | No purpose, repeated on every frame |
+| Tally light flicker on every Home load | Deleted | Decoration; a second entrance competing with the name |
+| Beat-5 "Start a project" clip wipe | Deleted | A reveal with no purpose |
+| Frame hover: image scale 1.03 + frame-line scale | Reduced to frame-line opacity, 150ms, and only on frames that link somewhere | Frequent hover; it also fired on frames that were not links |
+| Link underline `scaleX` wipe | Reduced to opacity, 150ms | Frequent hover |
+| Ambient grain re-seeding at 12fps while idle | Reduced: grain only moves while something else moves | Infinite loop on a persistent element |
+
+**Kept:** the name develop (single hero entrance; the canvas handoff depends on it); the 5-beat Home scene (the signature); press feedback on pointerdown (120ms); the toast enter and exit (prevents a jarring change, occasional); the beat-5 status glide (spatial continuity from the stage into the settled header).
+
+### break-ui (fixtures in `src/data/fixtures.ts`: long, nourl, withurl, noimage, single, empty, many)
+| # | Severity | Case | What broke | Fix |
+|---|---|---|---|---|
+| 1 | Broken | long name | The beat-3 full-frame card name ran 6+ lines up under the header (320 and 1440) | Card name clamped to 2 lines, summary to 3 (`home.css`) |
+| 2 | Ugly | zero projects | The empty slate inherited the 4/8/12-column grid, so its text was crushed into one-word columns | Single-column `.sheet--empty` (`gate.css`) |
+| 3 | Ugly | one project | The lone frame sat centred at columns 3–10 | Anchored left (`gate.css`) |
+| 4 | Fragile | dev toggle | The select sat bottom-left | Bottom-centre segmented control, dev server only (`plugins/site-html.ts`) |
+
+**Held up:** a missing URL ("Link not yet published", no dead link); a very long URL; a missing image (typographic frame); 8 projects; corridor slate truncation; no horizontal overflow and a clean console in every fixture at 320 and 1440.
+
+### Measured
+- **First load (gzip, HTML + CSS + entry + static chunks; Three.js and GSAP are lazy):** Home 9.1 kB, Work 7.1 kB, About 7.1 kB, Contact 10.0 kB (`npm run budget`).
+- **Lazy chunks:** Three.js tier 1 ~135 kB gz; GSAP + ScrollTrigger + runtime ~51 kB gz; tier 2 ~2 kB gz.
+- **Scrub frame times, 390×844** (`scripts/perf-scrub.mjs`; gate: p95 ≤ 18.2ms and no frame over 32ms):
+  - **Default path, 4× CPU** (tier 2 here, because this machine is software GL): p95 16.8ms (60fps), with 1–9 single dropped frames (33ms) per 8s scrub. **Fails the strict gate here.**
+  - **Default path, 3× and 2× CPU:** 0 dropped frames. **Passes.**
+  - **Forced tier 1, 4× CPU:** p95 16.8ms, 13–16 single dropped frames, all in full-screen fills (the name at the counter, the full-frame card). On SwiftShader that fill work runs on the CPU, so this number is not representative of a GPU.
+  - Main-thread script is ~0.5s per 8s scrub; the remainder is CPU rasterisation that a phone's GPU would take.
+- **Home CLS:** 0.002.
+- **Context loss** (forced `loseContext()`): tier 1 swaps in place to tier 2, and the console is clean apart from three.js's own "Context Lost." log line.
+
+### Unverified until a real phone and real accounts exist
+- The 4× frame-time gate on real mid-range hardware (Pixel 6a / Galaxy A54 class), and tier 1 on a real GPU.
+- iOS Safari: `svh`, safe areas, the touch smear and ripple feel, and canvas `fontStretch` support. If Safari lacks it, the canvas name could differ subtly from the DOM name at the handoff.
+- Real email delivery through Resend (tested here only in dry-run mode, because resend.com is unreachable from this session).
+- Cloudflare Pages Rate Limiting binding support (KV counters are used instead).
+
+### Deploy (Cloudflare Pages)
+1. `npm ci && npm run build`
+2. Create the KV namespace: `npx wrangler kv namespace create RATE_KV`, then put its id in `wrangler.toml`.
+3. Set the secrets: `npx wrangler pages secret put RESEND_API_KEY` and `npx wrangler pages secret put FORM_HMAC_KEY` (any long random string). The Resend account must be created with aaravchopra1202@gmail.com.
+4. `npx wrangler pages deploy dist`
+5. Local preview with the function: copy `.dev.vars.example` to `.dev.vars`, then `npm run preview`. QA: `npm run budget`, `npm run qa:motion`, `npm run qa:perf`.
