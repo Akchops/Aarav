@@ -13,5 +13,5 @@
     "noUnusedParameters": true,
     "allowImportingTsExtensions": false
   },
-  "include": ["src", "plugins", "vite.config.ts"]
+  "include": ["src", "plugins", "vite.config.ts", "vite.preview.config.ts"]
 }

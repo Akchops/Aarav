@@ -6,3 +6,4 @@ qa-run/
 qa/*.png
 *.log
 .DS_Store
+preview/.build/
