@@ -1,0 +1,121 @@
+/*
+ * The motif — "slate and gate". Every image sits in a film gate: a 1px frame-line
+ * with four registration crosses just outside its corners. 16:9 throughout.
+ */
+.gate {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: var(--c-gate);
+}
+/* Frame-line: its own layer, so the hover tighten is a transform, not a paint. */
+.gate::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--c-line);
+  pointer-events: none;
+}
+/* Registration crosses, one image at four corners. */
+.gate::before {
+  content: '';
+  position: absolute;
+  inset: -16px;
+  background:
+    var(--cross) left top / 11px 11px no-repeat,
+    var(--cross) right top / 11px 11px no-repeat,
+    var(--cross) left bottom / 11px 11px no-repeat,
+    var(--cross) right bottom / 11px 11px no-repeat;
+  pointer-events: none;
+}
+.gate__clip { display: block; width: 100%; height: 100%; overflow: hidden; }
+.gate__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* Missing image: a typographic frame, never a hole. */
+.gate__blank {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 16px;
+  overflow: hidden;
+}
+.gate__blank span {
+  font: 900 clamp(2rem, 8vw, 5rem)/0.9 var(--f-display);
+  font-stretch: 75%;
+  letter-spacing: -0.02em;
+  color: var(--c-line);
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+/* ---------- The contact sheet (Work grid) ---------- */
+.sheet {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: var(--gutter);
+  row-gap: 40px;
+  /* The grid owns vertical scrolling only: no accidental horizontal gesture capture. */
+  touch-action: pan-y;
+}
+.sheet__item { grid-column: 1 / -1; min-width: 0; }
+/* Contact-sheet asymmetry on phones: even frames are inset from the left. */
+.sheet__item:nth-child(even) { grid-column: 2 / -1; }
+.sheet[data-count='1'] .sheet__item { grid-column: 1 / -1; }
+
+@media (min-width: 768px) {
+  .sheet { grid-template-columns: repeat(8, minmax(0, 1fr)); row-gap: 56px; }
+  .sheet__item:nth-child(odd) { grid-column: 1 / span 4; }
+  .sheet__item:nth-child(even) { grid-column: 5 / span 4; margin-top: clamp(40px, 8vw, 120px); }
+  .sheet[data-count='1'] .sheet__item { grid-column: 2 / span 6; margin-top: 0; }
+}
+@media (min-width: 1024px) {
+  .sheet { grid-template-columns: repeat(12, minmax(0, 1fr)); row-gap: 72px; }
+  .sheet__item:nth-child(odd) { grid-column: 1 / span 6; }
+  .sheet__item:nth-child(even) { grid-column: 7 / span 6; }
+  .sheet[data-count='1'] .sheet__item { grid-column: 3 / span 8; }
+}
+
+.frame { display: grid; gap: 8px; min-width: 0; }
+.frame .gate { margin-bottom: 8px; }
+.frame__meta {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  min-width: 0;
+}
+.frame__no {
+  flex: none;
+  font: 500 12px/1 var(--f-mono);
+  letter-spacing: 0.08em;
+  color: var(--c-dust);
+}
+.frame__name {
+  min-width: 0;
+  font: 600 1.25rem/1.15 var(--f-body);
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
+.frame__summary { color: var(--c-dust); max-width: 46ch; overflow-wrap: anywhere; }
+.frame__link,
+.frame__nolink {
+  justify-self: start;
+  font: 500 12px/1.3 var(--f-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.frame__link { display: inline-flex; align-items: center; min-height: 32px; }
+.frame__nolink { color: var(--c-dust); }
+
+.sheet--empty {
+  display: grid;
+  gap: 12px;
+  padding: 32px 0;
+  border-top: 1px solid var(--c-line);
+  border-bottom: 1px solid var(--c-line);
+}
+.sheet__empty { color: var(--c-dust); }

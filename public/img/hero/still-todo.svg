@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900">
+  <!-- TODO: placeholder still for tier 3. Replace with a capture of the corridor once project screenshots exist. -->
+  <rect width="1600" height="900" fill="#0B0B0A"/>
+  <g stroke="#8C877D" stroke-opacity="0.18" stroke-width="1.5" fill="none">
+    <path d="M0 0 L700 410"/><path d="M1600 0 L900 410"/><path d="M0 900 L700 490"/><path d="M1600 900 L900 490"/>
+  </g>
+  <polygon points="120,170 560,330 560,600 120,760" fill="#1C1B19" stroke="#EDE9E1" stroke-opacity="0.5" stroke-width="2"/>
+  <polygon points="1480,250 1080,370 1080,560 1480,690" fill="#1C1B19" stroke="#EDE9E1" stroke-opacity="0.35" stroke-width="2"/>
+  <text x="150" y="215" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="24" letter-spacing="3" fill="#8C877D">SC 01 · KESSEL</text>
+  <text x="1110" y="410" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="20" letter-spacing="3" fill="#8C877D">SC 02 · PRAYATN</text>
+  <text x="800" y="860" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="22" letter-spacing="4" fill="#8C877D">TODO — STILL OF THE CORRIDOR, CAPTURED FROM THE FINISHED SCENE</text>
+</svg>

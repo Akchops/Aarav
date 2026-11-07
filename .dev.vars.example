@@ -1,0 +1,4 @@
+# Copy to .dev.vars for `npm run preview` (wrangler pages dev). Never commit .dev.vars.
+FORM_HMAC_KEY=local-dev-only-change-me
+RESEND_API_KEY=re_dummy_local
+MAIL_DRY_RUN=1

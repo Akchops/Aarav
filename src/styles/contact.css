@@ -1,0 +1,66 @@
+/* Contact: form and the three direct routes. */
+.contact .page-title .status { margin-top: 8px; }
+.contact__grid { display: grid; gap: 56px; }
+@media (min-width: 1024px) {
+  .contact__grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--gutter);
+  }
+  .form { grid-column: 1 / span 6; }
+  .contact__direct { grid-column: 8 / span 5; }
+}
+
+.form { display: grid; gap: 24px; max-width: 40rem; }
+.field { display: grid; gap: 8px; }
+.field__label {
+  font: 500 12px/1.3 var(--f-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-dust);
+}
+.field__input {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 1px solid var(--c-line);
+  border-radius: 0;
+  background: var(--c-gate);
+  color: var(--c-screen);
+  /* 16px minimum: iOS Safari zooms into anything smaller. */
+  font: 400 16px/1.45 var(--f-body);
+  -webkit-appearance: none;
+  appearance: none;
+}
+.field__input--area { min-height: 160px; resize: vertical; }
+.field__input:focus-visible { outline: 2px solid var(--c-tally); outline-offset: 0; }
+.field__input[aria-invalid='true'] { border-color: var(--c-tally); }
+.field__hint { font-size: 14px; color: var(--c-dust); }
+.field__error { font-size: 14px; color: var(--c-tally); }
+.field__error:empty { display: none; }
+
+/* Honeypot: off-screen, not display:none (some bots skip hidden fields). */
+.hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+
+.button--submit { justify-self: start; min-width: 180px; }
+
+.contact__direct .label { margin-bottom: 12px; }
+.routes { border-bottom: 1px solid var(--c-line); }
+.route {
+  display: grid;
+  gap: 4px;
+  min-height: 72px;
+  padding: 14px 0;
+  border-top: 1px solid var(--c-line);
+  text-decoration: none;
+}
+.route__label {
+  font: 500 12px/1.3 var(--f-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-dust);
+}
+.route__value {
+  font: 500 1.25rem/1.3 var(--f-body);
+  color: var(--c-screen);
+  overflow-wrap: anywhere;
+}

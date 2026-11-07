@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
+    <title>Aarav — Website Builder</title>
+    <meta name="description" content="Aarav builds websites. Taking new clients." />
+    <!-- The site is dark-only, so both schemes get the page colour. -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#0B0B0A" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0B0B0A" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <!-- No-JS contract: content is visible by default; .js only exists once script runs. -->
+    <script>document.documentElement.classList.add('js')</script>
+    <link rel="stylesheet" href="/src/styles/main.css" />
+    <script type="module" src="/src/entries/home.ts"></script>
+  </head>
+  <body class="page page--home">
+    <a class="skip" href="#main">Skip to content</a>
+    <!--@header-->
+    <main id="main">
+      <!--
+        The Home scene. Without JS (or with reduced motion) this is two stacked
+        blocks: the title card, then the settled grid. With JS and motion it
+        becomes one pinned 5-beat sequence (src/hero/timeline.ts).
+      -->
+      <section class="scene" data-scene aria-labelledby="hero-name">
+        <div class="stage" data-stage>
+          <div class="stage__gate" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+          <div class="stage__copy">
+            <h1 class="stage__name" id="hero-name" data-name>Aarav</h1>
+            <p class="stage__role">Website Builder</p>
+          </div>
+          <!--@status-->
+          <p class="stage__timecode" aria-hidden="true"><span class="vh">Timecode </span><span data-timecode>00:00:00:00</span></p>
+          <!-- Tier 3: a static image, always in the DOM. The canvas tiers mount above it. -->
+          <!-- TODO: placeholder still. Replace with a capture of the corridor once project screenshots exist. -->
+          <img class="stage__still" src="/img/hero/still-todo.svg" width="1600" height="900"
+               alt="Placeholder still of the opening scene: two project frames facing each other down a dark corridor (to be replaced)"
+               data-todo="placeholder image" />
+          <div class="stage__labels" aria-hidden="true" data-labels></div>
+          <div class="stage__card" aria-hidden="true" data-card>
+            <p class="slate" data-card-slate></p>
+            <p class="stage__card-name" data-card-name></p>
+            <p class="stage__card-summary" data-card-summary></p>
+          </div>
+        </div>
+
+        <div class="settle" data-settle>
+          <div class="settle__head">
+            <p class="settle__name" aria-hidden="true" data-subtitle>Aarav</p>
+            <!--@status:settle-->
+            <a class="button" href="/contact/" data-cta data-press>Start a project</a>
+          </div>
+          <h2 class="label settle__label" id="selected-work">Selected work</h2>
+          <!--@grid:h3-->
+          <p class="settle__more"><a class="link" href="/work/">See all work</a></p>
+        </div>
+      </section>
+    </main>
+    <!--@footer-->
+  </body>
+</html>

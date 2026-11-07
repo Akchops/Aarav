@@ -1,0 +1,68 @@
+/*
+ * Toast — the Sonner pattern, vanilla (ask-sonner). One toaster at the root,
+ * bottom position (centre on phones, right on wide screens), enters and exits
+ * along the same path, swipe down to dismiss. Transitions, not keyframes, so a
+ * toast fired twice retargets instead of restarting.
+ */
+.toaster {
+  position: fixed;
+  z-index: 90;
+  left: calc(16px + var(--safe-l));
+  right: calc(16px + var(--safe-r));
+  bottom: calc(16px + var(--safe-b));
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+  outline: none;
+}
+@media (min-width: 600px) {
+  .toaster { left: auto; right: calc(32px + var(--safe-r)); bottom: calc(32px + var(--safe-b)); width: 356px; }
+}
+.toast {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 4px 12px;
+  align-items: start;
+  padding: 14px 16px;
+  background: var(--c-gate);
+  border: 1px solid var(--c-line);
+  color: var(--c-screen);
+  pointer-events: auto;
+  touch-action: none; /* the toast owns its own swipe gesture */
+  -webkit-user-select: none;
+  user-select: none;
+  transform: translateY(var(--y, 0px));
+  opacity: 1;
+  transition: transform 250ms var(--ease-out), opacity 250ms var(--ease-out);
+}
+.toast[data-state='entering'],
+.toast[data-state='leaving'] { opacity: 0; transform: translateY(calc(100% + 16px)); }
+.toast[data-state='leaving'] { transition-duration: 200ms; }
+.toast[data-swiping] { transition: none; }
+.toast__icon { width: 8px; height: 8px; margin-top: 7px; border-radius: 50%; background: var(--c-dust); }
+.toast[data-type='success'] .toast__icon { background: var(--c-screen); }
+.toast[data-type='error'] .toast__icon { background: var(--c-tally); }
+.toast__title { font: 600 15px/1.35 var(--f-body); }
+.toast__desc { grid-column: 2; font-size: 14px; line-height: 1.45; color: var(--c-dust); overflow-wrap: anywhere; -webkit-user-select: text; user-select: text; }
+.toast__close {
+  grid-column: 3;
+  grid-row: 1;
+  width: 32px;
+  height: 32px;
+  margin: -6px -8px 0 0;
+  border: 0;
+  background: none;
+  color: var(--c-dust);
+  font: 400 20px/1 var(--f-body);
+  cursor: pointer;
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Fewer, gentler: keep the fade, drop the travel. */
+  .toast[data-state='entering'],
+  .toast[data-state='leaving'] { transform: none; }
+}

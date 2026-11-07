@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000">
+  <!-- TODO: placeholder. Replace with a 4:5 portrait photo of Aarav (min 1600x2000). -->
+  <rect width="800" height="1000" fill="#1C1B19"/>
+  <g fill="none" stroke="#8C877D" stroke-opacity="0.3" stroke-width="2">
+    <ellipse cx="400" cy="400" rx="150" ry="185"/>
+    <path d="M140 1000 C 160 760, 300 660, 400 660 C 500 660, 640 760, 660 1000"/>
+  </g>
+  <text x="60" y="90" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="26" letter-spacing="4" fill="#8C877D">TODO — PORTRAIT OF AARAV</text>
+  <text x="60" y="950" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="22" letter-spacing="4" fill="#8C877D">PLACEHOLDER · 4:5 · MIN 1600 × 2000</text>
+</svg>

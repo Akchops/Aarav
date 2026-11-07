@@ -1,0 +1,215 @@
+/*
+ * Home scene.
+ *
+ * Base layout (no JS, reduced motion, script error, tier 3): two stacked blocks —
+ * the title card (.stage), then the settled grid (.settle). Every fact is here.
+ *
+ * Cinematic layout (.scene.is-cinematic, added only once a canvas tier has
+ * mounted): .stage becomes a 100svh overlay on top of .settle, and the whole
+ * .scene is pinned for the beat sheet. The overlay hides nothing that is not
+ * also in .settle, and it fades away at the end of beat 4.
+ */
+.scene { position: relative; }
+
+/* ---------- Title card ---------- */
+.stage {
+  position: relative;
+  min-height: max(100svh, 520px);
+  background: var(--c-black);
+  overflow: hidden;
+  /* The scene owns horizontal touch (the smear) but never vertical: scrolling always works. */
+  touch-action: pan-y;
+}
+.stage__gate {
+  position: absolute;
+  top: calc(var(--header-total) + 16px);
+  left: var(--pad-l);
+  right: var(--pad-r);
+  bottom: 64px;
+  border: 1px solid var(--c-line);
+  pointer-events: none;
+  z-index: 2;
+}
+.stage__gate i {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  background: var(--cross) center / 11px 11px no-repeat;
+}
+.stage__gate i:nth-child(1) { left: -17px; top: -17px; }
+.stage__gate i:nth-child(2) { right: -17px; top: -17px; }
+.stage__gate i:nth-child(3) { left: -17px; bottom: -17px; }
+.stage__gate i:nth-child(4) { right: -17px; bottom: -17px; }
+
+.stage__copy {
+  position: absolute;
+  left: calc(var(--pad-l) + 12px);
+  right: var(--pad-r);
+  bottom: 76px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-start;
+  gap: 10px;
+  pointer-events: none;
+}
+.stage__name {
+  font: 900 var(--name-size)/0.82 var(--f-display);
+  font-stretch: 75%;
+  letter-spacing: var(--name-track);
+  color: var(--c-screen);
+  /* Keep descender-free ink tight to the frame-line. */
+  margin-bottom: -0.04em;
+}
+.stage__role {
+  font: 500 12px/1.2 var(--f-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-dust);
+}
+.stage .status {
+  position: absolute;
+  left: var(--pad-l);
+  bottom: 24px;
+  z-index: 2;
+}
+.stage__timecode {
+  position: absolute;
+  right: var(--pad-r);
+  bottom: 24px;
+  z-index: 2;
+  font: 500 12px/1.2 var(--f-mono);
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-dust);
+}
+
+/* Tier 3 still: in the DOM unconditionally; the canvas tiers paint over it. */
+.stage__still {
+  position: absolute;
+  z-index: 1;
+  top: calc(var(--header-total) + 40px);
+  left: calc(var(--pad-l) + 16px);
+  right: calc(var(--pad-r) + 16px);
+  width: auto;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  object-fit: cover;
+  outline: 1px solid var(--c-line);
+}
+@media (min-width: 768px) {
+  .stage__still { left: auto; width: min(46vw, 720px); }
+}
+@media (max-height: 640px) and (max-width: 767px) {
+  .stage__still { width: 60%; left: auto; }
+}
+
+/* The canvas tiers. */
+.stage__fx {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* Overlay pieces used only by the cinematic tiers. */
+.stage__labels,
+.stage__card { display: none; }
+
+/* ---------- Settled frame ---------- */
+.settle {
+  padding: 48px var(--pad-r) 0 var(--pad-l);
+}
+.settle__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 4px 16px;
+  margin-bottom: 20px;
+}
+.settle__head .button { grid-column: 2; grid-row: 1; align-self: end; }
+.settle__name {
+  grid-column: 1;
+  grid-row: 1;
+  font: 900 clamp(2.75rem, 7vw, 4.5rem)/0.82 var(--f-display);
+  font-stretch: 75%;
+  letter-spacing: var(--name-track);
+  color: var(--c-screen);
+}
+.status--settle { grid-column: 1 / -1; grid-row: 2; white-space: nowrap; }
+.settle__label { margin-bottom: 16px; }
+.settle__more { margin-top: 32px; }
+
+/* Duplicates that exist only as landing targets for the cinematic tiers. */
+.scene:not(.is-cinematic) .settle__name,
+.scene:not(.is-cinematic) .status--settle { display: none; }
+.scene:not(.is-cinematic) .settle__head { grid-template-columns: 1fr; justify-items: start; }
+.scene:not(.is-cinematic) .settle__head .button { grid-column: 1; grid-row: auto; }
+
+/* ---------- Cinematic layout ---------- */
+.scene.is-cinematic .stage {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 100svh;
+  min-height: 0;
+  z-index: 3;
+}
+.scene.is-cinematic .settle {
+  min-height: 100svh;
+  padding-top: calc(var(--header-total) + 20px);
+}
+.scene.is-cinematic .stage__labels,
+.scene.is-cinematic .stage__card {
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+.stage__label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  max-width: 40vw;
+  font: 500 12px/1.3 var(--f-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-screen);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  will-change: transform, opacity;
+}
+/* Beat 3's full-frame card: a black slate board over the projected frame, so the
+   copy stays legible over any screenshot. */
+.scene.is-cinematic .stage__card {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
+  padding: 0 var(--pad-r) 96px calc(var(--pad-l) + 12px);
+  opacity: 0;
+}
+.stage__card > * {
+  max-width: min(42rem, 100%);
+  background: var(--c-black);
+}
+.stage__card .slate { padding: 10px 14px 0; }
+.stage__card-name {
+  padding: 8px 14px 4px;
+  font: 900 clamp(3rem, 12vw, 8rem)/0.86 var(--f-display);
+  font-stretch: 75%;
+  letter-spacing: var(--name-track);
+  color: var(--c-screen);
+  overflow-wrap: anywhere;
+}
+.stage__card-summary {
+  padding: 4px 14px 12px;
+  color: var(--c-screen);
+}
+/* While the canvas draws the name, the DOM copy stays in the accessibility tree, invisible. */
+/* The develop keyframes fill forwards, which would beat a plain opacity rule, so
+   the handoff cancels the animation as well. */
+.scene.is-handed .stage__name { animation: none; opacity: 0; }
+.scene.is-cinematic .stage__still { visibility: hidden; }

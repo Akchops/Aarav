@@ -1,0 +1,91 @@
+/*
+ * CSS motion layer. Only transform, opacity and clip-path animate (animate
+ * skill). Durations from the interaction map in PLAN.md §6. Never ease-in.
+ * Everything here is gated so reduced-motion users get the static design.
+ */
+
+/* ---------- Press: pointerdown only (src/core/press.ts), never keyboard ---------- */
+.button,
+.route,
+.frame__link {
+  transition: transform 120ms var(--ease-out);
+}
+.is-pressed { transform: scale(0.97); }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* ---------- First load: the name develops out of the dark (1.4s, rare tier) ----------
+     CSS keyframes run off the main thread, so this never waits for Three.js.
+     The canvas tiers read this animation's currentTime and continue it seamlessly. */
+  .js .stage__name {
+    animation: develop 1400ms var(--ease-out) 200ms both;
+  }
+  @keyframes develop {
+    from { clip-path: inset(100% 0 0 0); opacity: 0; }
+    to   { clip-path: inset(0 0 0 0);    opacity: 1; }
+  }
+
+  /* The tally light flickers on once, as the name develops. Never loops. */
+  .js .stage .tally {
+    animation: tally-on 700ms steps(1, end) 700ms both;
+  }
+  @keyframes tally-on {
+    0%   { opacity: 0.15; }
+    20%  { opacity: 1; }
+    35%  { opacity: 0.25; }
+    50%  { opacity: 1; }
+    100% { opacity: 1; }
+  }
+}
+
+/* ---------- Hover: fine pointers only (touch fires false hovers) ---------- */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .gate__img { transition: transform 200ms ease; }
+  .gate::after { transition: transform 200ms ease; }
+  .frame:hover .gate__img { transform: scale(1.03); }
+  /* "The frame-line tightens inward": ~2px at a typical frame width. */
+  .frame:hover .gate::after { transform: scale(0.994); }
+
+  .link::after { transition: transform 200ms ease; }
+  .link:hover::after { transform: scaleX(1); transform-origin: left; }
+}
+/* Hover colour changes are instant (not an animated property). */
+@media (hover: hover) and (pointer: fine) {
+  .nav__link:hover { color: var(--c-screen); }
+  .route:hover .route__value { color: var(--c-tally); }
+}
+
+/* ---------- Page transitions: cross-document View Transitions ----------
+   Shared elements: the brand mark, and each project frame (frame-<slug>) between
+   Home and Work. Skipped for keyboard-initiated navigation (src/core/view-transitions.ts). */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition { navigation: auto; }
+  ::view-transition-group(*) {
+    animation-duration: 400ms;
+    animation-timing-function: var(--ease-in-out);
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 250ms;
+    animation-timing-function: var(--ease-out);
+  }
+}
+
+/* ---------- Work: crop migration — each frame's image drifts inside its gate ----------
+   Pure CSS scroll-driven animation, progressive: no support = a static frame. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .page--work .gate__img {
+      animation: crop-migrate linear both;
+      animation-timeline: view();
+      animation-range: entry 0% exit 100%;
+    }
+    @keyframes crop-migrate {
+      from { transform: scale(1.08) translateY(-3%); }
+      to   { transform: scale(1.08) translateY(3%); }
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-pressed { transform: none; }
+}

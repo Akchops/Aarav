@@ -1,0 +1,18 @@
+# Cloudflare Pages project config (PLAN.md §9a).
+# Secrets are NOT here: set them with
+#   npx wrangler pages secret put RESEND_API_KEY
+#   npx wrangler pages secret put FORM_HMAC_KEY
+name = "aarav-portfolio"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-09-01"
+
+[vars]
+CONTACT_TO = "aaravchopra1202@gmail.com"
+# Without a verified domain, Resend's test sender only delivers to the address
+# that owns the Resend account — so Aarav signs up with aaravchopra1202@gmail.com.
+MAIL_FROM = "Aarav website <onboarding@resend.dev>"
+
+[[kv_namespaces]]
+binding = "RATE_KV"
+# TODO: create with `npx wrangler kv namespace create RATE_KV` and paste the id here.
+id = "00000000000000000000000000000000"
