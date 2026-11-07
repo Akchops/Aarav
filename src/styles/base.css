@@ -3,8 +3,11 @@
 *::before,
 *::after { box-sizing: border-box; }
 
+/* Dark-only by design. Declared on :root (not html) so it also outranks a host
+   page's own :root color-scheme, e.g. when embedded as an artifact. */
+:root { color-scheme: dark; }
+
 html {
-  color-scheme: dark;
   background: var(--c-black);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;

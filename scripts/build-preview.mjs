@@ -91,7 +91,24 @@ if (problems.length) {
 
 mkdirSync(join(root, 'preview'), { recursive: true });
 writeFileSync(outFile, html);
+
+// ---- Artifact variant ----
+// An artifact host wraps the file in its own doctype/head/body (charset, viewport
+// with viewport-fit=cover), so that variant carries only page content: a name for
+// the gallery, the boot script, the styles, the module bundle and the body.
+const headPart = /<head>([\s\S]*?)<\/head>/.exec(html)[1];
+const bodyPart = /<body[^>]*>([\s\S]*)<\/body>/.exec(html)[1];
+const headKeep = [...headPart.matchAll(/<style>[\s\S]*?<\/style>|<script\b[\s\S]*?<\/script>/g)].map((m) => m[0]);
+const artifact = [
+  '<title>Aarav Portfolio Home</title>',
+  "<script>document.documentElement.lang = 'en';</script>",
+  ...headKeep,
+  bodyPart.trim(),
+].join('\n');
+const artifactFile = join(root, 'preview/aarav-home-artifact.html');
+writeFileSync(artifactFile, artifact);
 rmSync(tmp, { recursive: true, force: true });
 const kb = statSync(outFile).size / 1024;
 console.log(`build-preview: ${outFile}`);
+console.log(`  artifact variant ${artifactFile} (${(statSync(artifactFile).size / 1024).toFixed(1)} kB)`);
 console.log(`  size ${kb.toFixed(1)} kB  (fonts kept ${kept}, dropped ${dropped}; script escapes ${escapes}; string URLs allowed: ${allowed.length})`);
