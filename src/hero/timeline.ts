@@ -7,7 +7,6 @@
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { clamp01, easeOut } from '../motion/easing';
-import { onBeforeSwap } from '../core/view-transitions';
 import { beatPx, phasesFor, type Phases } from './beats';
 import { measureLayout, type Layout } from './layout';
 import { SceneModel } from './model';
@@ -43,7 +42,6 @@ class Runtime {
   private lastP = -1;
   private developStart: number | null = null;
   private t0 = performance.now();
-  private lastGrain = 0;
   private lastTick = performance.now();
   private readonly ptr = { x: -1e4, y: -1e4, tx: -1e4, ty: -1e4, vx: 0, vy: 0, speed: 0, tSpeed: 0, presence: 0, tPresence: 0, nx: 0, ny: 0 };
   private ripple = { x: 0, y: 0, t: -1 };
@@ -69,6 +67,9 @@ class Runtime {
     ]);
     if (this.destroyed) return;
 
+    // Usually already set by the head script; re-asserted here in case its safety
+    // timeout fired on a slow connection before the scene could mount.
+    document.documentElement.classList.add('motion');
     this.scene.classList.add('is-cinematic');
     this.measure();
     const maxTex = this.caps?.maxTexture ?? 4096;
@@ -129,7 +130,7 @@ class Runtime {
     // beat 2: corridor travel past the project frames
     // beat 3: the featured frame swings to the camera and fills the screen
     // beat 4: every frame flies onto its DOM frame; the name settles into the subtitle
-    // beat 5: status and "Start a project" settle; the pin releases into the same layout
+    // beat 5: the status glides into the settled header; the pin releases into the same layout
     this.tl = gsap.timeline({
       scrollTrigger: {
         trigger: this.scene,
@@ -222,13 +223,6 @@ class Runtime {
         this.state.p = this.phases.beats;
       }
     });
-
-    // A frame still under the overlay must not morph into the Work page from there.
-    onBeforeSwap(() => {
-      if (this.phases && this.state.p < this.phases.assemble[1]) {
-        this.layout?.planes.forEach((pl) => (pl.gate.style.viewTransitionName = 'none'));
-      }
-    });
   }
 
   // ---------------------------------------------------------------- loop
@@ -284,9 +278,9 @@ class Runtime {
 
     const inp = this.inputs(now);
     const pointerLive = p.speed > 0.002 || Math.abs(p.tPresence - p.presence) > 0.002 || p.presence > 0.002;
-    const grainDue = now - this.lastGrain > 1000 / 12; // ambient grain refresh at 12fps
-    if (pChanged || pointerLive || inp.ripple.age >= 0 || inp.develop < 1 || grainDue) {
-      if (grainDue) this.lastGrain = now;
+    // Render only while something moves. (remove-animations: the grain no longer
+    // re-seeds on an idle loop; a still frame keeps its last grain.)
+    if (pChanged || pointerLive || inp.ripple.age >= 0 || inp.develop < 1) {
       this.tier.render(f, inp);
       if (pChanged || pointerLive) this.watchdog?.frame(dt);
     }
@@ -339,13 +333,14 @@ class Runtime {
     this.destroyed = true;
     gsap.ticker.remove(this.tick);
     this.off.splice(0).forEach((fn) => fn());
-    onBeforeSwap(() => undefined);
     this.tl?.scrollTrigger?.kill(true);
     this.tl?.kill();
     this.tier?.destroy();
     this.tier = null;
     this.overlay.reset();
     this.scene.classList.remove('is-cinematic', 'is-handed');
+    // Back to the stacked static layout (tier 3): nothing stays under the overlay.
+    document.documentElement.classList.remove('motion');
   }
 }
 

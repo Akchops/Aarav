@@ -101,8 +101,7 @@ button { font: inherit; color: inherit; }
   left: 0; right: 0; bottom: -0.12em;
   height: 1px;
   background: var(--c-tally);
-  transform: scaleX(0);
-  transform-origin: right;
+  opacity: 0;
   pointer-events: none;
 }
 

@@ -2,9 +2,9 @@
  * The DOM layer over the canvas: corridor slates, the beat-3 card, the role line,
  * the timecode, and the beat-5 settle (status FLIP + CTA wipe). Labels stay in the
  * DOM, never in WebGL (scroll-linked-3d): the real content lives in the grid below.
- * Writes transform / opacity / clip-path / textContent only — never layout.
+ * Writes transform / opacity / textContent only — never layout.
  */
-import { clamp01, easeInOut, easeOut } from '../motion/easing';
+import { easeInOut } from '../motion/easing';
 import type { Frame, SceneModel } from './model';
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -25,7 +25,6 @@ export class Overlay {
   private readonly timecode: HTMLElement | null;
   private readonly card: HTMLElement | null;
   private readonly statusSettle: HTMLElement | null;
-  private readonly cta: HTMLElement | null;
   private flip = { dx: 0, dy: 0 };
   private lastTc = '';
   private model: SceneModel | null = null;
@@ -35,7 +34,6 @@ export class Overlay {
     this.timecode = stage.querySelector('[data-timecode]');
     this.card = stage.querySelector('[data-card]');
     this.statusSettle = scene.querySelector('[data-status-settle]');
-    this.cta = scene.querySelector('[data-cta]');
   }
 
   setup(model: SceneModel) {
@@ -107,24 +105,18 @@ export class Overlay {
       set(this.card, 'transform', `translate3d(0, ${f.cardShift.toFixed(1)}px, 0)`);
     }
 
-    // Beat 5: status glides from its stage position into the settled header row,
-    // and "Start a project" wipes in (clip-path) after it.
+    // Beat 5: status glides from its stage position into the settled header row.
     const e = easeInOut(f.settle);
     if (this.statusSettle) {
       set(this.statusSettle, 'transform', `translate3d(${(this.flip.dx * (1 - e)).toFixed(1)}px, ${(this.flip.dy * (1 - e)).toFixed(1)}px, 0)`);
     }
-    if (this.cta) {
-      const w = easeOut(clamp01((f.settle - 0.25) / 0.75));
-      set(this.cta, 'clip-path', w >= 1 ? 'none' : `inset(0 ${((1 - w) * 100).toFixed(2)}% 0 0)`);
-    }
   }
 
   reset() {
-    for (const el of [this.stage, this.role, this.card, this.statusSettle, this.cta]) {
+    for (const el of [this.stage, this.role, this.card, this.statusSettle]) {
       if (!el) continue;
       el.style.removeProperty('opacity');
       el.style.removeProperty('transform');
-      el.style.removeProperty('clip-path');
       el.style.removeProperty('pointer-events');
       el.style.removeProperty('visibility');
       cache.delete(el);

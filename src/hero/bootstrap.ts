@@ -14,8 +14,9 @@ export function bootScene() {
   const stage = scene?.querySelector<HTMLElement>('[data-stage]');
   if (!scene || !stage) return;
 
+  const motionOff = () => document.documentElement.classList.remove('motion');
   const q = new URLSearchParams(location.search).get('tier');
-  if (q === '3') return;
+  if (q === '3') return motionOff();
   const forced = q === '1' || q === '2' ? q : null;
 
   let started = false;
@@ -32,6 +33,7 @@ export function bootScene() {
           startScene(scene, stage, forced);
         } catch (err) {
           // A failed chunk load leaves tier 3 standing. Silent in production.
+          motionOff();
           if (import.meta.env.DEV) console.error(err);
         }
       },
@@ -41,5 +43,8 @@ export function bootScene() {
   };
 
   if (!prefersReducedMotion()) start();
-  else matchMedia(reducedMotionQuery).addEventListener('change', (e) => !e.matches && start());
+  else {
+    motionOff();
+    matchMedia(reducedMotionQuery).addEventListener('change', (e) => !e.matches && start());
+  }
 }

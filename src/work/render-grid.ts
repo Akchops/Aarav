@@ -60,7 +60,7 @@ export function renderGrid(projects: Project[], heading: 'h2' | 'h3'): string {
 
       return `<li class="sheet__item" data-project="${slug}"${i === featuredIndex ? ' data-featured' : ''} data-name="${name}" data-summary="${esc(p.summary)}" data-scene-no="${sceneNo(i)}">
   <article class="frame">
-    <figure class="gate" data-gate style="view-transition-name: frame-${slug}">${media}</figure>
+    <figure class="gate" data-gate>${media}</figure>
     <div class="frame__meta">
       <span class="frame__no" aria-hidden="true">${sceneNo(i)}</span>
       <${heading} class="frame__name">${name}</${heading}>
@@ -83,7 +83,7 @@ export function renderHeader(page: Page): string {
   const link = (href: string, label: string, key: Page) =>
     `<li><a class="nav__link" href="${href}"${page === key ? ' aria-current="page"' : ''}>${label}</a></li>`;
   return `<header class="site-header">
-  <a class="brand" href="/"${page === 'home' ? ' aria-current="page"' : ''} style="view-transition-name: brand">
+  <a class="brand" href="/"${page === 'home' ? ' aria-current="page"' : ''}>
     <span class="brand__name">${esc(site.brand)}</span><span class="brand__role">${esc(site.role)}</span>
   </a>
   <nav class="nav" aria-label="Primary">

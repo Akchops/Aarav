@@ -20,7 +20,7 @@ export interface ProjectImage {
 }
 
 export interface Project {
-  /** Lowercase a-z, 0-9 and hyphens. Used for ids and view-transition names. */
+  /** Lowercase a-z, 0-9 and hyphens. Used for ids and data attributes. */
   slug: string;
   name: string;
   /** The description as supplied. One sentence. */

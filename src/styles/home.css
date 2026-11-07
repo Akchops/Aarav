@@ -4,9 +4,10 @@
  * Base layout (no JS, reduced motion, script error, tier 3): two stacked blocks —
  * the title card (.stage), then the settled grid (.settle). Every fact is here.
  *
- * Cinematic layout (.scene.is-cinematic, added only once a canvas tier has
- * mounted): .stage becomes a 100svh overlay on top of .settle, and the whole
- * .scene is pinned for the beat sheet. The overlay hides nothing that is not
+ * Cinematic layout (html.motion — chosen before first paint by the head script
+ * in index.html, so mounting the scene causes no layout shift): .stage becomes a
+ * 100svh overlay on top of .settle, and the whole .scene is pinned for the beat
+ * sheet. Any failure to mount removes .motion and the stacked layout returns. The overlay hides nothing that is not
  * also in .settle, and it fades away at the end of beat 4.
  */
 .scene { position: relative; }
@@ -152,25 +153,25 @@
 .settle__more { margin-top: 32px; }
 
 /* Duplicates that exist only as landing targets for the cinematic tiers. */
-.scene:not(.is-cinematic) .settle__name,
-.scene:not(.is-cinematic) .status--settle { display: none; }
-.scene:not(.is-cinematic) .settle__head { grid-template-columns: 1fr; justify-items: start; }
-.scene:not(.is-cinematic) .settle__head .button { grid-column: 1; grid-row: auto; }
+:root:not(.motion) .scene .settle__name,
+:root:not(.motion) .scene .status--settle { display: none; }
+:root:not(.motion) .scene .settle__head { grid-template-columns: 1fr; justify-items: start; }
+:root:not(.motion) .scene .settle__head .button { grid-column: 1; grid-row: auto; }
 
 /* ---------- Cinematic layout ---------- */
-.scene.is-cinematic .stage {
+.motion .scene .stage {
   position: absolute;
   inset: 0 0 auto 0;
   height: 100svh;
   min-height: 0;
   z-index: 3;
 }
-.scene.is-cinematic .settle {
+.motion .scene .settle {
   min-height: 100svh;
   padding-top: calc(var(--header-total) + 20px);
 }
-.scene.is-cinematic .stage__labels,
-.scene.is-cinematic .stage__card {
+.motion .scene .stage__labels,
+.motion .scene .stage__card {
   display: block;
   position: absolute;
   inset: 0;
@@ -193,7 +194,7 @@
 }
 /* Beat 3's full-frame card: a black slate board over the projected frame, so the
    copy stays legible over any screenshot. */
-.scene.is-cinematic .stage__card {
+.motion .scene .stage__card {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -238,4 +239,4 @@
 /* The develop keyframes fill forwards, which would beat a plain opacity rule, so
    the handoff cancels the animation as well. */
 .scene.is-handed .stage__name { animation: none; opacity: 0; }
-.scene.is-cinematic .stage__still { visibility: hidden; }
+.motion .scene .stage__still { visibility: hidden; }

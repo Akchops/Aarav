@@ -12,7 +12,10 @@
   content: '';
   position: absolute;
   inset: 0;
-  border: 1px solid var(--c-line);
+  /* Dust at full strength, shown at 35%: identical to --c-line at rest, and a
+     hover can brighten it with opacity alone. */
+  border: 1px solid var(--c-dust);
+  opacity: 0.35;
   pointer-events: none;
 }
 /* Registration crosses, one image at four corners. */
